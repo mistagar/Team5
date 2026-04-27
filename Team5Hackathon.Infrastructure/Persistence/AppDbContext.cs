@@ -12,14 +12,15 @@ using Team5Hackathon.Infrastructure.Identity;
 
 namespace Team5Hackathon.Infrastructure.Persistence
 {
-    public class UserDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, Guid>
+    public class AppDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, Guid>
     {
-        public UserDbContext(DbContextOptions<UserDbContext> options) : base(options) { }       
+        public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }       
         public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
         public DbSet<Client> Clients { get; set; } = null!;
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
+
             builder.Entity<RefreshToken>(entity =>
             {
                 entity.HasOne<ApplicationUser>()
@@ -36,6 +37,12 @@ namespace Team5Hackathon.Infrastructure.Persistence
             builder.Entity<IdentityUserLogin<Guid>>().ToTable("UserLogins");
             builder.Entity<IdentityRoleClaim<Guid>>().ToTable("RoleClaims");
             builder.Entity<IdentityUserToken<Guid>>().ToTable("UserTokens");
+
+
+
+
+
+
 
             var adminRoleId = Guid.Parse("c4a3298c-6198-4d12-bd1a-56d1d1ce0aa7");
            // var systemAdminRoleId = Guid.Parse("38b657f4-ac20-4a5c-b2a3-16dfad61c381");

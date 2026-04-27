@@ -32,7 +32,7 @@ builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
     // User settings (optional)
     options.User.RequireUniqueEmail = true;
 })
- .AddEntityFrameworkStores<UserDbContext>()
+ .AddEntityFrameworkStores<AppDbContext>()
  .AddDefaultTokenProviders();
 
 
