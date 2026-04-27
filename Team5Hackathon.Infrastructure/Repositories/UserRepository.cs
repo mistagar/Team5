@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,21 +8,20 @@ using System.Text;
 using System.Threading.Tasks;
 using Team5Hackathon.Domain.Entities;
 using Team5Hackathon.Domain.RepositoriesContract;
+using Team5Hackathon.Infrastructure.Identity;
+using Team5Hackathon.Infrastructure.Persistence;
 
 namespace Team5Hackathon.Infrastructure.Repositories
 {
-    internal class UserRepository
-    {
-    }
-
+    
     public class UserRepository : IUserRepository
     {
         private readonly UserManager<ApplicationUser> _userManager;
-        private readonly UserDbContext _dbContext;
+        private readonly AppDbContext _dbContext;
         public UserRepository(
             UserManager<ApplicationUser> userManager,
             SignInManager<ApplicationUser> signInManager,
-            UserDbContext dbContext)
+            AppDbContext dbContext)
         {
             _userManager = userManager;
             _dbContext = dbContext;
@@ -198,15 +198,7 @@ namespace Team5Hackathon.Infrastructure.Repositories
         }
        
         
-        public async Task<bool> DeleteAddressAsync(Guid userId, Guid addressId)
-        {
-            var address = await _dbContext.Addresses.FirstOrDefaultAsync(a => a.Id == addressId && a.UserId == userId);
-            if (address == null)
-                return false;
-            _dbContext.Addresses.Remove(address);
-            await _dbContext.SaveChangesAsync();
-            return true;
-        }
+        
         public async Task<bool> IsLockedOutAsync(User user)
         {
             var appUser = await _userManager.FindByIdAsync(user.Id.ToString());

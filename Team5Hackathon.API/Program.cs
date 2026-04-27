@@ -7,11 +7,13 @@ using Team5Hackathon.Domain.RepositoriesContract;
 using Team5Hackathon.Infrastructure.Identity;
 using Team5Hackathon.Infrastructure.Persistence;
 using Team5Hackathon.Infrastructure.Repositories;
+using Team5Hackathon.API.Extensions;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-
+builder.Services.AddApplicationModules(builder.Configuration);
 builder.Services.AddControllers();
 
 
@@ -81,9 +83,12 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseRouting();
+app.UseApiSecurityPipeline();
 
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapGet("/health", () => Results.Ok(new { Status = "Healthy" })).AllowAnonymous();
 
 app.Run();

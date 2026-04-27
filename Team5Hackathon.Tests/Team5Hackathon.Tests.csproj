@@ -20,4 +20,10 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Team5Hackathon.API\Team5Hackathon.API.csproj" />
+    <ProjectReference Include="..\Team5Hackathon.Application\Team5Hackathon.Application.csproj" />
+    <ProjectReference Include="..\Team5Hackathon.Domain\Team5Hackathon.Domain.csproj" />
+  </ItemGroup>
+
 </Project>

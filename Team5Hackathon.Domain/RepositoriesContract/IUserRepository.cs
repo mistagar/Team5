@@ -27,7 +27,6 @@ namespace Team5Hackathon.Domain.RepositoriesContract
         Task<string> GenerateAndStoreRefreshTokenAsync(Guid userId, string clientId, string userAgent, string ipAddress);
         Task<RefreshToken?> GetRefreshTokenAsync(string token);
         Task RevokeRefreshTokenAsync(RefreshToken refreshToken, string ipAddress);
-        Task<bool> DeleteAddressAsync(Guid userId, Guid addressId);
         Task<bool> IsLockedOutAsync(User user);
         Task<bool> IsTwoFactorEnabledAsync(User user);
         Task IncrementAccessFailedCountAsync(User user);
