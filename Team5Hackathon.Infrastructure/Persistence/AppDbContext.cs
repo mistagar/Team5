@@ -85,10 +85,17 @@ namespace Team5Hackathon.Infrastructure.Persistence
                new ApplicationRole
                {
                    Id = readonlyRoleId,
-                   Name = "ReadOnly",
-                   NormalizedName = "READONLY",
-                   Description = "User with readonly access"
-               }
+                   Name = "Customer",
+                   NormalizedName = "CUSTOMER",
+                   Description = "Customer with Customer access"
+               },
+                new ApplicationRole
+                {
+                    Id = supervisorRoleId,
+                    Name = "Agent",
+                    NormalizedName = "AGENT",
+                    Description = "Agent with agent permissions"
+                }
            );
             builder.Entity<Client>().HasData(
                 new Client { ClientId = "web", ClientName = "Web Client", Description = "Web browser clients", IsActive = true },
