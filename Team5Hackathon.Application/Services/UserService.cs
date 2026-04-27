@@ -46,6 +46,110 @@ namespace Team5Hackathon.Application.Services
             await _userRepository.AddUserToRoleAsync(user, "Customer");
             return true;
         }
+
+
+
+        public async Task<bool> RegisterCustomerAsync(RegisterDTO dto)
+        {
+            if (await _userRepository.FindByEmailAsync(dto.Email) != null)
+                return false;
+            if (await _userRepository.FindByUserNameAsync(dto.UserName) != null)
+                return false;
+            var user = new User
+            {
+                Id = Guid.NewGuid(),
+                UserName = dto.UserName,
+                Email = dto.Email,
+                PhoneNumber = dto.PhoneNumber,
+                FullName = dto.FullName,
+                CreatedAt = DateTime.UtcNow,
+                IsActive = true,
+                IsEmailConfirmed = false
+            };
+            var created = await _userRepository.CreateUserAsync(user, dto.Password);
+            if (!created)
+                return false;
+            await _userRepository.AddUserToRoleAsync(user, "Customer");
+            return true;
+        }
+
+
+
+        public async Task<bool> RegisterSupervisorAsync(RegisterDTO dto)
+        {
+            if (await _userRepository.FindByEmailAsync(dto.Email) != null)
+                return false;
+            if (await _userRepository.FindByUserNameAsync(dto.UserName) != null)
+                return false;
+            var user = new User
+            {
+                Id = Guid.NewGuid(),
+                UserName = dto.UserName,
+                Email = dto.Email,
+                PhoneNumber = dto.PhoneNumber,
+                FullName = dto.FullName,
+                CreatedAt = DateTime.UtcNow,
+                IsActive = true,
+                IsEmailConfirmed = false
+            };
+            var created = await _userRepository.CreateUserAsync(user, dto.Password);
+            if (!created)
+                return false;
+            await _userRepository.AddUserToRoleAsync(user, "Supervisor");
+            return true;
+        }
+
+
+        public async Task<bool> RegisterAdminAsync(RegisterDTO dto)
+        {
+            if (await _userRepository.FindByEmailAsync(dto.Email) != null)
+                return false;
+            if (await _userRepository.FindByUserNameAsync(dto.UserName) != null)
+                return false;
+            var user = new User
+            {
+                Id = Guid.NewGuid(),
+                UserName = dto.UserName,
+                Email = dto.Email,
+                PhoneNumber = dto.PhoneNumber,
+                FullName = dto.FullName,
+                CreatedAt = DateTime.UtcNow,
+                IsActive = true,
+                IsEmailConfirmed = false
+            };
+            var created = await _userRepository.CreateUserAsync(user, dto.Password);
+            if (!created)
+                return false;
+            await _userRepository.AddUserToRoleAsync(user, "Admin");
+            return true;
+        }
+
+
+        public async Task<bool> RegisterAgentAsync(RegisterDTO dto)
+        {
+            if (await _userRepository.FindByEmailAsync(dto.Email) != null)
+                return false;
+            if (await _userRepository.FindByUserNameAsync(dto.UserName) != null)
+                return false;
+            var user = new User
+            {
+                Id = Guid.NewGuid(),
+                UserName = dto.UserName,
+                Email = dto.Email,
+                PhoneNumber = dto.PhoneNumber,
+                FullName = dto.FullName,
+                CreatedAt = DateTime.UtcNow,
+                IsActive = true,
+                IsEmailConfirmed = false
+            };
+            var created = await _userRepository.CreateUserAsync(user, dto.Password);
+            if (!created)
+                return false;
+            await _userRepository.AddUserToRoleAsync(user, "Agent");
+            return true;
+        }
+
+
         public async Task<LoginResponseDTO> LoginAsync(LoginDTO dto, string ipAddress, string userAgent)
         {
             var response = new LoginResponseDTO();

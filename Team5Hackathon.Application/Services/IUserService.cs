@@ -21,6 +21,11 @@ namespace Team5Hackathon.Application.Services
         Task<ProfileDTO?> GetProfileAsync(Guid userId);
         Task<bool> UpdateProfileAsync(UpdateProfileDTO dto);               
         Task<bool> IsUserExistsAsync(Guid userId);
-       
+        Task<bool> RegisterCustomerAsync(RegisterDTO dto);
+        Task<bool> RegisterSupervisorAsync(RegisterDTO dto);
+        Task<bool> RegisterAdminAsync(RegisterDTO dto);
+        Task<bool> RegisterAgentAsync(RegisterDTO dto);
+
+
     }
 }
