@@ -11,4 +11,9 @@
     <Folder Include="Services\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Team5Hackathon.Domain\Team5Hackathon.Domain.csproj" />
+    <ProjectReference Include="..\Team5Hackathon.Infrastructure\Team5Hackathon.Infrastructure.csproj" />
+  </ItemGroup>
+
 </Project>

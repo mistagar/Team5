@@ -12,4 +12,8 @@
     <Folder Include="Repositories\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Team5Hackathon.Domain\Team5Hackathon.Domain.csproj" />
+  </ItemGroup>
+
 </Project>
