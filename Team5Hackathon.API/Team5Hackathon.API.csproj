@@ -15,4 +15,8 @@
     <ProjectReference Include="..\Team5Hackathon.Infrastructure\Team5Hackathon.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Controllers\" />
+  </ItemGroup>
+
 </Project>
