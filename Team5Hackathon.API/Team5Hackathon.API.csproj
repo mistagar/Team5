@@ -13,6 +13,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Controllers\" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Team5Hackathon.Application\Team5Hackathon.Application.csproj" />
     <ProjectReference Include="..\Team5Hackathon.Infrastructure\Team5Hackathon.Infrastructure.csproj" />
   </ItemGroup>
