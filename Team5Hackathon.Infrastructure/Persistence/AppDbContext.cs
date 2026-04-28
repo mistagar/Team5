@@ -63,9 +63,9 @@ namespace Team5Hackathon.Infrastructure.Persistence
 
 
             var adminRoleId = Guid.Parse("c4a3298c-6198-4d12-bd1a-56d1d1ce0aa7");
-            // var systemAdminRoleId = Guid.Parse("38b657f4-ac20-4a5c-b2a3-16dfad61c381");
             var supervisorRoleId = Guid.Parse("582880c3-f554-490f-a24e-526db35cffa5");
-            var readonlyRoleId = Guid.Parse("a3d7f9b1-8c42-4e6d-b5a9-91c2e7f4d8ab");
+            var customerRoleId = Guid.Parse("a3d7f9b1-8c42-4e6d-b5a9-91c2e7f4d8ab");
+            var agentRoleId = Guid.Parse("e8b9c5d2-3f1a-4b7e-9d6c-2a8f7e5b4c3d");
 
             builder.Entity<ApplicationRole>().HasData(
                new ApplicationRole
@@ -84,14 +84,14 @@ namespace Team5Hackathon.Infrastructure.Persistence
                },
                new ApplicationRole
                {
-                   Id = readonlyRoleId,
+                   Id = customerRoleId,
                    Name = "Customer",
                    NormalizedName = "CUSTOMER",
                    Description = "Customer with Customer access"
                },
                 new ApplicationRole
                 {
-                    Id = supervisorRoleId,
+                    Id = agentRoleId,
                     Name = "Agent",
                     NormalizedName = "AGENT",
                     Description = "Agent with agent permissions"
