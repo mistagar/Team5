@@ -60,7 +60,7 @@ namespace Team5Hackathon.API.Controllers
             }
         }
 
-
+        [Authorize]
         [HttpPost("register-admin")]
         [ProducesResponseType(typeof(ApiResponse<string>), (int)HttpStatusCode.OK)]
         [ProducesResponseType(typeof(ApiResponse<string>), (int)HttpStatusCode.BadRequest)]
@@ -79,7 +79,7 @@ namespace Team5Hackathon.API.Controllers
             }
         }
 
-
+        [Authorize]
         [HttpPost("register-supervisor")]
         [ProducesResponseType(typeof(ApiResponse<string>), (int)HttpStatusCode.OK)]
         [ProducesResponseType(typeof(ApiResponse<string>), (int)HttpStatusCode.BadRequest)]
