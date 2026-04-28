@@ -25,7 +25,8 @@ namespace Team5Hackathon.Application.Services
         Task<bool> RegisterSupervisorAsync(RegisterDTO dto);
         Task<bool> RegisterAdminAsync(RegisterDTO dto);
         Task<bool> RegisterAgentAsync(RegisterDTO dto);
-
-
+        Task<UserRequestDTO> CreateUserRequestAsync(CreateUserRequestDTO dto);
+        Task<UserRequestDTO?> GetUserRequestAsync(Guid requestId);
+        Task<IEnumerable<UserRequestDTO>> GetUserRequestsAsync(Guid userId);
     }
 }
