@@ -11,6 +11,9 @@ using System.Threading.Tasks;
 using Team5Hackathon.Application.DTOs.UserDTO;
 using Team5Hackathon.Domain.Entities;
 using Team5Hackathon.Domain.RepositoriesContract;
+using Microsoft.Extensions.Logging;
+using Team5Hackathon.Application.Services;
+using Team5Hackathon.Application.DTOs.Audit;
 
 namespace Team5Hackathon.Application.Services
 {
@@ -18,17 +21,27 @@ namespace Team5Hackathon.Application.Services
     {
         private readonly IUserRepository _userRepository;
         private readonly IConfiguration _configuration;
-        public UserService(IUserRepository userRepository, IConfiguration configuration)
+        private readonly ILogger<UserService> _logger;
+        private readonly IAuditService _auditService;
+        public UserService(IUserRepository userRepository, IConfiguration configuration, ILogger<UserService> logger, IAuditService auditService)
         {
             _userRepository = userRepository;
             _configuration = configuration;
+            _logger = logger;
+            _auditService = auditService;
         }
         public async Task<bool> RegisterAsync(RegisterDTO dto)
         {
             if (await _userRepository.FindByEmailAsync(dto.Email) != null)
+            {
+                _logger.LogWarning("Registration failed: Email {Email} already exists.", dto.Email);
                 return false;
+            }
             if (await _userRepository.FindByUserNameAsync(dto.UserName) != null)
+            {
+                _logger.LogWarning("Registration failed: Username {UserName} already exists.", dto.UserName);
                 return false;
+            }
             var user = new User
             {
                 Id = Guid.NewGuid(),
@@ -38,12 +51,26 @@ namespace Team5Hackathon.Application.Services
                 FullName = dto.FullName,
                 CreatedAt = DateTime.UtcNow,
                 IsActive = true,
-                IsEmailConfirmed = false
+                IsEmailConfirmed = true
             };
             var created = await _userRepository.CreateUserAsync(user, dto.Password);
             if (!created)
+            {
+                _logger.LogError("Registration failed: Could not create user {UserName}.", dto.UserName);
                 return false;
+            }
             await _userRepository.AddUserToRoleAsync(user, "Customer");
+            _logger.LogInformation("User {UserName} registered successfully.", dto.UserName);
+            await _auditService.RecordAsync(new AuditEntry
+            {
+                Action = "User Registration",
+                Outcome = "success",
+                EntityName = "User",
+                EntityId = user.Id.ToString(),
+                Description = $"User {dto.UserName} registered successfully",
+                PerformedBy = dto.UserName,
+                PerformedById = user.Id.ToString()
+            });
             return true;
         }
 
@@ -52,9 +79,15 @@ namespace Team5Hackathon.Application.Services
         public async Task<bool> RegisterCustomerAsync(RegisterDTO dto)
         {
             if (await _userRepository.FindByEmailAsync(dto.Email) != null)
+            {
+                _logger.LogWarning("Registration failed: Email {Email} already exists.", dto.Email);
                 return false;
+            }
             if (await _userRepository.FindByUserNameAsync(dto.UserName) != null)
+            {
+                _logger.LogWarning("Registration failed: Username {UserName} already exists.", dto.UserName);
                 return false;
+            }
             var user = new User
             {
                 Id = Guid.NewGuid(),
@@ -64,12 +97,26 @@ namespace Team5Hackathon.Application.Services
                 FullName = dto.FullName,
                 CreatedAt = DateTime.UtcNow,
                 IsActive = true,
-                IsEmailConfirmed = false
+                IsEmailConfirmed = true
             };
             var created = await _userRepository.CreateUserAsync(user, dto.Password);
             if (!created)
+            {
+                _logger.LogError("Registration failed: Could not create user {UserName}.", dto.UserName);
                 return false;
+            }
             await _userRepository.AddUserToRoleAsync(user, "Customer");
+            _logger.LogInformation("User {UserName} registered as Customer successfully.", dto.UserName);
+            await _auditService.RecordAsync(new AuditEntry
+            {
+                Action = "User Registration",
+                Outcome = "success",
+                EntityName = "User",
+                EntityId = user.Id.ToString(),
+                Description = $"User {dto.UserName} registered as Customer successfully",
+                PerformedBy = dto.UserName,
+                PerformedById = user.Id.ToString()
+            });
             return true;
         }
 
@@ -78,9 +125,15 @@ namespace Team5Hackathon.Application.Services
         public async Task<bool> RegisterSupervisorAsync(RegisterDTO dto)
         {
             if (await _userRepository.FindByEmailAsync(dto.Email) != null)
+            {
+                _logger.LogWarning("Registration failed: Email {Email} already exists.", dto.Email);
                 return false;
+            }
             if (await _userRepository.FindByUserNameAsync(dto.UserName) != null)
+            {
+                _logger.LogWarning("Registration failed: Username {UserName} already exists.", dto.UserName);
                 return false;
+            }
             var user = new User
             {
                 Id = Guid.NewGuid(),
@@ -90,12 +143,26 @@ namespace Team5Hackathon.Application.Services
                 FullName = dto.FullName,
                 CreatedAt = DateTime.UtcNow,
                 IsActive = true,
-                IsEmailConfirmed = false
+                IsEmailConfirmed = true
             };
             var created = await _userRepository.CreateUserAsync(user, dto.Password);
             if (!created)
+            {
+                _logger.LogError("Registration failed: Could not create user {UserName}.", dto.UserName);
                 return false;
+            }
             await _userRepository.AddUserToRoleAsync(user, "Supervisor");
+            _logger.LogInformation("User {UserName} registered as Supervisor successfully.", dto.UserName);
+            await _auditService.RecordAsync(new AuditEntry
+            {
+                Action = "User Registration",
+                Outcome = "success",
+                EntityName = "User",
+                EntityId = user.Id.ToString(),
+                Description = $"User {dto.UserName} registered as Supervisor successfully",
+                PerformedBy = dto.UserName,
+                PerformedById = user.Id.ToString()
+            });
             return true;
         }
 
@@ -103,9 +170,15 @@ namespace Team5Hackathon.Application.Services
         public async Task<bool> RegisterAdminAsync(RegisterDTO dto)
         {
             if (await _userRepository.FindByEmailAsync(dto.Email) != null)
+            {
+                _logger.LogWarning("Registration failed: Email {Email} already exists.", dto.Email);
                 return false;
+            }
             if (await _userRepository.FindByUserNameAsync(dto.UserName) != null)
+            {
+                _logger.LogWarning("Registration failed: Username {UserName} already exists.", dto.UserName);
                 return false;
+            }
             var user = new User
             {
                 Id = Guid.NewGuid(),
@@ -115,12 +188,26 @@ namespace Team5Hackathon.Application.Services
                 FullName = dto.FullName,
                 CreatedAt = DateTime.UtcNow,
                 IsActive = true,
-                IsEmailConfirmed = false
+                IsEmailConfirmed = true
             };
             var created = await _userRepository.CreateUserAsync(user, dto.Password);
             if (!created)
+            {
+                _logger.LogError("Registration failed: Could not create user {UserName}.", dto.UserName);
                 return false;
+            }
             await _userRepository.AddUserToRoleAsync(user, "Admin");
+            _logger.LogInformation("User {UserName} registered as Admin successfully.", dto.UserName);
+            await _auditService.RecordAsync(new AuditEntry
+            {
+                Action = "User Registration",
+                Outcome = "success",
+                EntityName = "User",
+                EntityId = user.Id.ToString(),
+                Description = $"User {dto.UserName} registered as Admin successfully",
+                PerformedBy = dto.UserName,
+                PerformedById = user.Id.ToString()
+            });
             return true;
         }
 
@@ -128,9 +215,15 @@ namespace Team5Hackathon.Application.Services
         public async Task<bool> RegisterAgentAsync(RegisterDTO dto)
         {
             if (await _userRepository.FindByEmailAsync(dto.Email) != null)
+            {
+                _logger.LogWarning("Registration failed: Email {Email} already exists.", dto.Email);
                 return false;
+            }
             if (await _userRepository.FindByUserNameAsync(dto.UserName) != null)
+            {
+                _logger.LogWarning("Registration failed: Username {UserName} already exists.", dto.UserName);
                 return false;
+            }
             var user = new User
             {
                 Id = Guid.NewGuid(),
@@ -140,12 +233,26 @@ namespace Team5Hackathon.Application.Services
                 FullName = dto.FullName,
                 CreatedAt = DateTime.UtcNow,
                 IsActive = true,
-                IsEmailConfirmed = false
+                IsEmailConfirmed = true
             };
             var created = await _userRepository.CreateUserAsync(user, dto.Password);
             if (!created)
+            {
+                _logger.LogError("Registration failed: Could not create user {UserName}.", dto.UserName);
                 return false;
+            }
             await _userRepository.AddUserToRoleAsync(user, "Agent");
+            _logger.LogInformation("User {UserName} registered as Agent successfully.", dto.UserName);
+            await _auditService.RecordAsync(new AuditEntry
+            {
+                Action = "User Registration",
+                Outcome = "success",
+                EntityName = "User",
+                EntityId = user.Id.ToString(),
+                Description = $"User {dto.UserName} registered as Agent successfully",
+                PerformedBy = dto.UserName,
+                PerformedById = user.Id.ToString()
+            });
             return true;
         }
 
@@ -156,6 +263,7 @@ namespace Team5Hackathon.Application.Services
             // Validate Client
             if (!await _userRepository.IsValidClientAsync(dto.ClientId))
             {
+                _logger.LogWarning("Login failed: Invalid client ID {ClientId} from IP {IPAddress}.", dto.ClientId, ipAddress);
                 response.ErrorMessage = "Invalid client ID.";
                 return response;
             }
@@ -165,6 +273,15 @@ namespace Team5Hackathon.Application.Services
                 : await _userRepository.FindByUserNameAsync(dto.EmailOrUserName);
             if (user == null)
             {
+                _logger.LogWarning("Login failed: User {EmailOrUserName} not found from IP {IPAddress}.", dto.EmailOrUserName, ipAddress);
+                await _auditService.RecordAsync(new AuditEntry
+                {
+                    Action = "User Login",
+                    Outcome = "failed",
+                    Description = $"Login failed: User {dto.EmailOrUserName} not found",
+                    IpAddress = ipAddress,
+                    UserAgent = userAgent
+                });
                 response.ErrorMessage = "Invalid username or password.";
                 return response;
             }
@@ -175,6 +292,7 @@ namespace Team5Hackathon.Application.Services
                 if (lockoutEnd.HasValue && lockoutEnd > DateTime.UtcNow)
                 {
                     var timeLeft = lockoutEnd.Value - DateTime.UtcNow;
+                    _logger.LogWarning("Login failed: Account {UserName} is locked out from IP {IPAddress}.", user.UserName, ipAddress);
                     response.ErrorMessage = $"Account is locked. Try again after {timeLeft.Minutes} minute(s) and {timeLeft.Seconds} second(s).";
                     response.RemainingAttempts = 0;
                     return response;
@@ -186,6 +304,7 @@ namespace Team5Hackathon.Application.Services
             }
             if (!user.IsEmailConfirmed)
             {
+                _logger.LogWarning("Login failed: Email not confirmed for {UserName} from IP {IPAddress}.", user.UserName, ipAddress);
                 response.ErrorMessage = "Email not confirmed. Please verify your email.";
                 return response;
             }
@@ -196,6 +315,7 @@ namespace Team5Hackathon.Application.Services
                 await _userRepository.IncrementAccessFailedCountAsync(user);
                 if (await _userRepository.IsLockedOutAsync(user))
                 {
+                    _logger.LogWarning("Login failed: Account {UserName} locked due to failed attempts from IP {IPAddress}.", user.UserName, ipAddress);
                     response.ErrorMessage = "Account locked due to multiple failed login attempts.";
                     response.RemainingAttempts = 0;
                     return response;
@@ -203,6 +323,19 @@ namespace Team5Hackathon.Application.Services
                 var maxAttempts = await _userRepository.GetMaxFailedAccessAttemptsAsync();
                 var failedCount = await _userRepository.GetAccessFailedCountAsync(user);
                 var attemptsLeft = maxAttempts - failedCount;
+                _logger.LogWarning("Login failed: Invalid password for {UserName} from IP {IPAddress}. Attempts left: {AttemptsLeft}.", user.UserName, ipAddress, attemptsLeft);
+                await _auditService.RecordAsync(new AuditEntry
+                {
+                    Action = "User Login",
+                    Outcome = "failed",
+                    EntityName = "User",
+                    EntityId = user.Id.ToString(),
+                    Description = $"Login failed: Invalid password for {user.UserName}",
+                    IpAddress = ipAddress,
+                    UserAgent = userAgent,
+                    PerformedBy = user.UserName,
+                    PerformedById = user.Id.ToString()
+                });
                 response.ErrorMessage = "Invalid username or password.";
                 response.RemainingAttempts = attemptsLeft > 0 ? attemptsLeft : 0;
                 return response;
@@ -210,6 +343,7 @@ namespace Team5Hackathon.Application.Services
             await _userRepository.ResetAccessFailedCountAsync(user);
             if (await _userRepository.IsTwoFactorEnabledAsync(user))
             {
+                _logger.LogInformation("Login requires 2FA for {UserName} from IP {IPAddress}.", user.UserName, ipAddress);
                 response.RequiresTwoFactor = true;
                 return response;
             }
@@ -217,6 +351,19 @@ namespace Team5Hackathon.Application.Services
             var roles = await _userRepository.GetUserRolesAsync(user);
             response.Token = GenerateJwtToken(user, roles, dto.ClientId);
             response.RefreshToken = await _userRepository.GenerateAndStoreRefreshTokenAsync(user.Id, dto.ClientId, userAgent, ipAddress);
+            _logger.LogInformation("User {UserName} logged in successfully from IP {IPAddress}.", user.UserName, ipAddress);
+            await _auditService.RecordAsync(new AuditEntry
+            {
+                Action = "User Login",
+                Outcome = "success",
+                EntityName = "User",
+                EntityId = user.Id.ToString(),
+                Description = $"User {user.UserName} logged in successfully",
+                IpAddress = ipAddress,
+                UserAgent = userAgent,
+                PerformedBy = user.UserName,
+                PerformedById = user.Id.ToString()
+            });
             return response;
         }
         public async Task<EmailConfirmationTokenResponseDTO?> SendConfirmationEmailAsync(string email)
@@ -224,7 +371,10 @@ namespace Team5Hackathon.Application.Services
             EmailConfirmationTokenResponseDTO? emailConfirmationTokenResponseDTO = null;
             var user = await _userRepository.FindByEmailAsync(email);
             if (user == null)
+            {
+                _logger.LogWarning("Send confirmation email failed: User with email {Email} not found.", email);
                 return null;
+            }
             var token = await _userRepository.GenerateEmailConfirmationTokenAsync(user);
             if (token != null)
             {
@@ -233,6 +383,11 @@ namespace Team5Hackathon.Application.Services
                     UserId = user.Id,
                     Token = token
                 };
+                _logger.LogInformation("Confirmation email token generated for user {UserName}.", user.UserName);
+            }
+            else
+            {
+                _logger.LogError("Failed to generate confirmation token for user {UserName}.", user.UserName);
             }
             return emailConfirmationTokenResponseDTO;
         }
@@ -240,12 +395,38 @@ namespace Team5Hackathon.Application.Services
         {
             var user = await _userRepository.FindByIdAsync(dto.UserId);
             if (user == null)
+            {
+                _logger.LogWarning("Email verification failed: User {UserId} not found.", dto.UserId);
                 return false;
+            }
             var result = await _userRepository.VerifyConfirmaionEmailAsync(user, dto.Token);
             if (result)
             {
                 user.IsActive = true;
                 await _userRepository.UpdateUserAsync(user);
+                _logger.LogInformation("Email verified successfully for user {UserName}.", user.UserName);
+                await _auditService.RecordAsync(new AuditEntry
+                {
+                    Action = "Email Verification",
+                    Outcome = "success",
+                    EntityName = "User",
+                    EntityId = user.Id.ToString(),
+                    Description = $"Email verified for user {user.UserName}",
+                    PerformedBy = user.UserName,
+                    PerformedById = user.Id.ToString()
+                });
+            }
+            else
+            {
+                _logger.LogWarning("Email verification failed: Invalid token for user {UserId}.", dto.UserId);
+                await _auditService.RecordAsync(new AuditEntry
+                {
+                    Action = "Email Verification",
+                    Outcome = "failed",
+                    EntityName = "User",
+                    EntityId = dto.UserId.ToString(),
+                    Description = "Email verification failed: Invalid token"
+                });
             }
             return result;
         }
@@ -255,12 +436,14 @@ namespace Team5Hackathon.Application.Services
             // Validate Client
             if (!await _userRepository.IsValidClientAsync(dto.ClientId))
             {
+                _logger.LogWarning("Refresh token failed: Invalid client ID {ClientId} from IP {IPAddress}.", dto.ClientId, ipAddress);
                 response.ErrorMessage = "Invalid client ID.";
                 return response;
             }
             var refreshTokenEntity = await _userRepository.GetRefreshTokenAsync(dto.RefreshToken);
             if (refreshTokenEntity == null || !refreshTokenEntity.IsActive)
             {
+                _logger.LogWarning("Refresh token failed: Invalid or expired token from IP {IPAddress}.", ipAddress);
                 response.ErrorMessage = "Invalid or expired refresh token.";
                 return response;
             }
@@ -269,20 +452,47 @@ namespace Team5Hackathon.Application.Services
             var user = await _userRepository.FindByIdAsync(refreshTokenEntity.UserId);
             if (user == null)
             {
+                _logger.LogError("Refresh token failed: User {UserId} not found.", refreshTokenEntity.UserId);
                 response.ErrorMessage = "User not found.";
                 return response;
             }
             var roles = await _userRepository.GetUserRolesAsync(user);
             response.Token = GenerateJwtToken(user, roles, dto.ClientId);
             response.RefreshToken = newRefreshToken;
+            _logger.LogInformation("Token refreshed successfully for user {UserName} from IP {IPAddress}.", user.UserName, ipAddress);
+            await _auditService.RecordAsync(new AuditEntry
+            {
+                Action = "Token Refresh",
+                Outcome = "success",
+                EntityName = "User",
+                EntityId = user.Id.ToString(),
+                Description = $"Token refreshed for user {user.UserName}",
+                IpAddress = ipAddress,
+                UserAgent = userAgent,
+                PerformedBy = user.UserName,
+                PerformedById = user.Id.ToString()
+            });
             return response;
         }
         public async Task<bool> RevokeRefreshTokenAsync(string token, string ipAddress)
         {
             var refreshToken = await _userRepository.GetRefreshTokenAsync(token);
             if (refreshToken == null || !refreshToken.IsActive)
+            {
+                _logger.LogWarning("Revoke token failed: Token not found or already inactive from IP {IPAddress}.", ipAddress);
                 return false;
+            }
             await _userRepository.RevokeRefreshTokenAsync(refreshToken, ipAddress);
+            _logger.LogInformation("Token revoked successfully from IP {IPAddress}.", ipAddress);
+            await _auditService.RecordAsync(new AuditEntry
+            {
+                Action = "Token Revocation",
+                Outcome = "success",
+                EntityName = "RefreshToken",
+                EntityId = refreshToken.Id.ToString(),
+                Description = "Refresh token revoked",
+                IpAddress = ipAddress
+            });
             return true;
         }
         public async Task<ForgotPasswordResponseDTO?> ForgotPasswordAsync(string email)
@@ -290,7 +500,10 @@ namespace Team5Hackathon.Application.Services
             ForgotPasswordResponseDTO? forgotPasswordResponseDTO = null;
             var user = await _userRepository.FindByEmailAsync(email);
             if (user == null)
+            {
+                _logger.LogWarning("Forgot password failed: User with email {Email} not found.", email);
                 return null;
+            }
             var token = await _userRepository.GeneratePasswordResetTokenAsync(user);
             if (token != null)
             {
@@ -299,6 +512,11 @@ namespace Team5Hackathon.Application.Services
                     UserId = user.Id,
                     Token = token
                 };
+                _logger.LogInformation("Password reset token generated for user {UserName}.", user.UserName);
+            }
+            else
+            {
+                _logger.LogError("Failed to generate password reset token for user {UserName}.", user.UserName);
             }
             return forgotPasswordResponseDTO;
         }
@@ -306,19 +524,87 @@ namespace Team5Hackathon.Application.Services
         {
             var user = await _userRepository.FindByIdAsync(userId);
             if (user == null)
+            {
+                _logger.LogWarning("Change password failed: User {UserId} not found.", userId);
                 return false;
-            return await _userRepository.ChangePasswordAsync(user, currentPassword, newPassword);
+            }
+            var result = await _userRepository.ChangePasswordAsync(user, currentPassword, newPassword);
+            if (result)
+            {
+                _logger.LogInformation("User {UserName} changed password successfully.", user.UserName);
+                await _auditService.RecordAsync(new AuditEntry
+                {
+                    Action = "Password Change",
+                    Outcome = "success",
+                    EntityName = "User",
+                    EntityId = user.Id.ToString(),
+                    Description = $"User {user.UserName} changed password successfully",
+                    PerformedBy = user.UserName,
+                    PerformedById = user.Id.ToString()
+                });
+            }
+            else
+            {
+                _logger.LogWarning("Change password failed: Invalid current password for {UserName}.", user.UserName);
+                await _auditService.RecordAsync(new AuditEntry
+                {
+                    Action = "Password Change",
+                    Outcome = "failed",
+                    EntityName = "User",
+                    EntityId = user.Id.ToString(),
+                    Description = $"Change password failed: Invalid current password for {user.UserName}",
+                    PerformedBy = user.UserName,
+                    PerformedById = user.Id.ToString()
+                });
+            }
+            return result;
         }
         public async Task<bool> ResetPasswordAsync(Guid userId, string token, string newPassword)
         {
             var user = await _userRepository.FindByIdAsync(userId);
-            if (user == null) return false;
-            return await _userRepository.ResetPasswordAsync(user, token, newPassword);
+            if (user == null)
+            {
+                _logger.LogWarning("Reset password failed: User {UserId} not found.", userId);
+                return false;
+            }
+            var result = await _userRepository.ResetPasswordAsync(user, token, newPassword);
+            if (result)
+            {
+                _logger.LogInformation("User {UserName} reset password successfully.", user.UserName);
+                await _auditService.RecordAsync(new AuditEntry
+                {
+                    Action = "Password Reset",
+                    Outcome = "success",
+                    EntityName = "User",
+                    EntityId = user.Id.ToString(),
+                    Description = $"User {user.UserName} reset password successfully",
+                    PerformedBy = user.UserName,
+                    PerformedById = user.Id.ToString()
+                });
+            }
+            else
+            {
+                _logger.LogWarning("Reset password failed: Invalid token for user {UserId}.", userId);
+                await _auditService.RecordAsync(new AuditEntry
+                {
+                    Action = "Password Reset",
+                    Outcome = "failed",
+                    EntityName = "User",
+                    EntityId = userId.ToString(),
+                    Description = "Password reset failed: Invalid token"
+                });
+            }
+            return result;
         }
         public async Task<ProfileDTO?> GetProfileAsync(Guid userId)
         {
             var user = await _userRepository.FindByIdAsync(userId);
-            if (user == null) return null;
+            if (user == null)
+            {
+                _logger.LogWarning("Get profile failed: User {UserId} not found.", userId);
+                return null;
+            }
+            _logger.LogInformation("Profile accessed for user {UserName}.", user.UserName);
             return new ProfileDTO
             {
                 UserId = user.Id,
@@ -334,17 +620,41 @@ namespace Team5Hackathon.Application.Services
         {
             var user = await _userRepository.FindByIdAsync(dto.UserId);
             if (user == null)
+            {
+                _logger.LogWarning("Update profile failed: User {UserId} not found.", dto.UserId);
                 return false;
+            }
             user.FullName = dto.FullName;
             user.PhoneNumber = dto.PhoneNumber;
             user.ProfilePhotoUrl = dto.ProfilePhotoUrl;
-            return await _userRepository.UpdateUserAsync(user);
+            var result = await _userRepository.UpdateUserAsync(user);
+            if (result)
+            {
+                _logger.LogInformation("Profile updated successfully for user {UserName}.", user.UserName);
+                await _auditService.RecordAsync(new AuditEntry
+                {
+                    Action = "Profile Update",
+                    Outcome = "success",
+                    EntityName = "User",
+                    EntityId = user.Id.ToString(),
+                    Description = $"Profile updated for user {user.UserName}",
+                    PerformedBy = user.UserName,
+                    PerformedById = user.Id.ToString()
+                });
+            }
+            else
+            {
+                _logger.LogError("Failed to update profile for user {UserName}.", user.UserName);
+            }
+            return result;
         }
        
        
         public async Task<bool> IsUserExistsAsync(Guid userId)
         {
-            return await _userRepository.IsUserExistsAsync(userId);
+            var exists = await _userRepository.IsUserExistsAsync(userId);
+            _logger.LogInformation("User existence check for {UserId}: {Exists}.", userId, exists);
+            return exists;
         }
       
         private string GenerateJwtToken(User user, IList<string> roles, string clientId)
