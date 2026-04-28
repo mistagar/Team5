@@ -261,6 +261,19 @@ namespace Team5Hackathon.Infrastructure.Repositories
         {
             return await _dbContext.Users.AsNoTracking().AnyAsync(u => u.Id == userId);
         }
-       
+        public async Task<UserRequest> CreateUserRequestAsync(UserRequest request)
+        {
+            _dbContext.UserRequests.Add(request);
+            await _dbContext.SaveChangesAsync();
+            return request;
+        }
+        public async Task<UserRequest?> GetUserRequestByIdAsync(Guid requestId)
+        {
+            return await _dbContext.UserRequests.FindAsync(requestId);
+        }
+        public async Task<IEnumerable<UserRequest>> GetUserRequestsByUserIdAsync(Guid userId)
+        {
+            return await _dbContext.UserRequests.Where(ur => ur.UserId == userId).ToListAsync();
+        }
     }
 }

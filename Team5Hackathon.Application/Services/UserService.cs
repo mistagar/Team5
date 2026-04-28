@@ -656,7 +656,62 @@ namespace Team5Hackathon.Application.Services
             _logger.LogInformation("User existence check for {UserId}: {Exists}.", userId, exists);
             return exists;
         }
-      
+        public async Task<UserRequestDTO> CreateUserRequestAsync(CreateUserRequestDTO dto)
+        {
+            var request = new UserRequest
+            {
+                Id = Guid.NewGuid(),
+                UserId = dto.UserId,
+                Type = dto.Type,
+                Content = dto.Content,
+                CreatedAt = DateTime.UtcNow,
+                Status = "pending"
+            };
+            var created = await _userRepository.CreateUserRequestAsync(request);
+            _logger.LogInformation("User request created for user {UserId}", dto.UserId);
+            return new UserRequestDTO
+            {
+                Id = created.Id,
+                UserId = created.UserId,
+                Type = created.Type,
+                Content = created.Content,
+                CreatedAt = created.CreatedAt,
+                Status = created.Status,
+                Summary = created.Summary,
+                Response = created.Response
+            };
+        }
+        public async Task<UserRequestDTO?> GetUserRequestAsync(Guid requestId)
+        {
+            var request = await _userRepository.GetUserRequestByIdAsync(requestId);
+            if (request == null) return null;
+            return new UserRequestDTO
+            {
+                Id = request.Id,
+                UserId = request.UserId,
+                Type = request.Type,
+                Content = request.Content,
+                CreatedAt = request.CreatedAt,
+                Status = request.Status,
+                Summary = request.Summary,
+                Response = request.Response
+            };
+        }
+        public async Task<IEnumerable<UserRequestDTO>> GetUserRequestsAsync(Guid userId)
+        {
+            var requests = await _userRepository.GetUserRequestsByUserIdAsync(userId);
+            return requests.Select(r => new UserRequestDTO
+            {
+                Id = r.Id,
+                UserId = r.UserId,
+                Type = r.Type,
+                Content = r.Content,
+                CreatedAt = r.CreatedAt,
+                Status = r.Status,
+                Summary = r.Summary,
+                Response = r.Response
+            });
+        }
         private string GenerateJwtToken(User user, IList<string> roles, string clientId)
         {
             var claims = new List<Claim>

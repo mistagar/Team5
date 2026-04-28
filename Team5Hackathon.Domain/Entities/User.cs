@@ -22,6 +22,6 @@ namespace Team5Hackathon.Domain.Entities
         public string? ProfilePhotoUrl { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? LastLoginAt { get; set; }
-       
+        public ICollection<UserRequest> Requests { get; set; } = new List<UserRequest>();
     }
 }
