@@ -86,6 +86,7 @@ app.UseHttpsRedirection();
 app.UseRouting();
 app.UseApiSecurityPipeline();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
