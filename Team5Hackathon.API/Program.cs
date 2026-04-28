@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models;
 using System.Text;
 using Team5Hackathon.Application.Services;
 using Team5Hackathon.Domain.RepositoriesContract;
@@ -9,9 +8,16 @@ using Team5Hackathon.Infrastructure.Identity;
 using Team5Hackathon.Infrastructure.Persistence;
 using Team5Hackathon.Infrastructure.Repositories;
 using Team5Hackathon.API.Extensions;
-
+using Serilog;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
+
+Log.Logger = new LoggerConfiguration()
+    .ReadFrom.Configuration(builder.Configuration)
+    .CreateLogger();
+
+builder.Host.UseSerilog();
 
 // Add services to the container.
 builder.Services.AddApplicationModules(builder.Configuration);
@@ -94,17 +100,26 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
+// Add CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", builder =>
+    {
+        builder.AllowAnyOrigin()
+               .AllowAnyMethod()
+               .AllowAnyHeader();
+    });
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
 app.UseRouting();
+app.UseCors("AllowAll");
 app.UseApiSecurityPipeline();
 
 app.UseAuthentication();
