@@ -42,6 +42,79 @@ namespace Team5Hackathon.API.Controllers
         }
 
 
+        [HttpPost("register-customer")]
+        [ProducesResponseType(typeof(ApiResponse<string>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(ApiResponse<string>), (int)HttpStatusCode.BadRequest)]
+        public async Task<IActionResult> RegisterCustomer([FromBody] RegisterDTO dto)
+        {
+            try
+            {
+                var result = await _userService.RegisterCustomerAsync(dto);
+                if (!result)
+                    return BadRequest(ApiResponse<string>.FailResponse("Registration failed. Email or username might already exist."));
+                return Ok(ApiResponse<string>.SuccessResponse("User registered successfully."));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponse<string>.FailResponse("Error during registration.", new List<string> { ex.Message }));
+            }
+        }
+
+
+        [HttpPost("register-admin")]
+        [ProducesResponseType(typeof(ApiResponse<string>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(ApiResponse<string>), (int)HttpStatusCode.BadRequest)]
+        public async Task<IActionResult> RegisterAdmin([FromBody] RegisterDTO dto)
+        {
+            try
+            {
+                var result = await _userService.RegisterAdminAsync(dto);
+                if (!result)
+                    return BadRequest(ApiResponse<string>.FailResponse("Registration failed. Email or username might already exist."));
+                return Ok(ApiResponse<string>.SuccessResponse("User registered successfully."));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponse<string>.FailResponse("Error during registration.", new List<string> { ex.Message }));
+            }
+        }
+
+
+        [HttpPost("register-supervisor")]
+        [ProducesResponseType(typeof(ApiResponse<string>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(ApiResponse<string>), (int)HttpStatusCode.BadRequest)]
+        public async Task<IActionResult> RegisterSupervisor([FromBody] RegisterDTO dto)
+        {
+            try
+            {
+                var result = await _userService.RegisterSupervisorAsync(dto);
+                if (!result)
+                    return BadRequest(ApiResponse<string>.FailResponse("Registration failed. Email or username might already exist."));
+                return Ok(ApiResponse<string>.SuccessResponse("User registered successfully."));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponse<string>.FailResponse("Error during registration.", new List<string> { ex.Message }));
+            }
+        }
+
+        [HttpPost("register-agent")]
+        [ProducesResponseType(typeof(ApiResponse<string>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(ApiResponse<string>), (int)HttpStatusCode.BadRequest)]
+        public async Task<IActionResult> RegisterAgent([FromBody] RegisterDTO dto)
+        {
+            try
+            {
+                var result = await _userService.RegisterAgentAsync(dto);
+                if (!result)
+                    return BadRequest(ApiResponse<string>.FailResponse("Registration failed. Email or username might already exist."));
+                return Ok(ApiResponse<string>.SuccessResponse("User registered successfully."));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponse<string>.FailResponse("Error during registration.", new List<string> { ex.Message }));
+            }
+        }
 
 
         [HttpPost("send-confirmation-email")]
