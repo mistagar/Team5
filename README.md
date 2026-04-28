@@ -58,3 +58,31 @@ Set these values in configuration (or environment variables / user secrets):
     "ApiKey": "YOUR_SECURE_API_KEY"
   }
 }
+
+
+## Audio Streaming MVP
+
+### Endpoint
+`POST /api/stream/audio-chunk`
+
+### Request Contract
+```json
+{
+  "callId": "11111111-1111-1111-1111-111111111111",
+  "sequence": 1,
+  "chunkBase64": "AQIDBA==",
+  "sentAtUtc": "2026-04-28T12:00:00Z"
+}
+
+
+{
+  "success": true,
+  "data": {
+    "accepted": true,
+    "callId": "11111111-1111-1111-1111-111111111111",
+    "sequence": 1,
+    "correlationId": "31826d3eed6c43ecacc0530e85038a0c"
+  },
+  "message": null,
+  "errors": null
+}
