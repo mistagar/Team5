@@ -19,6 +19,10 @@ namespace Team5Hackathon.Infrastructure.Persistence
         public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
         public DbSet<Client> Clients { get; set; } = null!;
         public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+        public DbSet<Call> Calls { get; set; } = null!;
+        public DbSet<TranscriptSegment> TranscriptSegments { get; set; } = null!;
+        public DbSet<FollowUpMessage> FollowUpMessages { get; set; } = null!;
+        public DbSet<UserRequest> UserRequests { get; set; } = null!;
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
@@ -59,8 +63,44 @@ namespace Team5Hackathon.Infrastructure.Persistence
             auditLog.HasIndex(x => x.CreatedAtUtc);
             auditLog.HasIndex(x => x.CorrelationId);
 
+            builder.Entity<Call>(entity =>
+            {
+                entity.HasKey(c => c.Id);
+                entity.Property(c => c.Transcript).HasMaxLength(10000);
+                entity.Property(c => c.Summary).HasMaxLength(2000);
+                entity.Property(c => c.ActionItems).HasMaxLength(2000);
+                entity.Property(c => c.PrimaryIntent).HasMaxLength(100);
+                entity.Property(c => c.Status).HasMaxLength(50);
+            });
 
+            builder.Entity<TranscriptSegment>(entity =>
+            {
+                entity.HasKey(ts => ts.Id);
+                entity.HasOne<Call>().WithMany().HasForeignKey(ts => ts.CallId);
+                entity.Property(ts => ts.Text).HasMaxLength(1000);
+                entity.Property(ts => ts.Intent).HasMaxLength(100);
+                entity.Property(ts => ts.Entities).HasMaxLength(1000);
+            });
 
+            builder.Entity<FollowUpMessage>(entity =>
+            {
+                entity.HasKey(fm => fm.Id);
+                entity.HasOne<Call>().WithMany().HasForeignKey(fm => fm.CallId);
+                entity.Property(fm => fm.Type).HasMaxLength(20);
+                entity.Property(fm => fm.Content).HasMaxLength(2000);
+                entity.Property(fm => fm.DeliveryStatus).HasMaxLength(50);
+            });
+
+            builder.Entity<UserRequest>(entity =>
+            {
+                entity.HasKey(ur => ur.Id);
+                entity.HasOne<User>().WithMany(u => u.Requests).HasForeignKey(ur => ur.UserId);
+                entity.Property(ur => ur.Type).HasMaxLength(50);
+                entity.Property(ur => ur.Content).HasMaxLength(5000);
+                entity.Property(ur => ur.Status).HasMaxLength(50);
+                entity.Property(ur => ur.Summary).HasMaxLength(2000);
+                entity.Property(ur => ur.Response).HasMaxLength(5000);
+            });
 
             var adminRoleId = Guid.Parse("c4a3298c-6198-4d12-bd1a-56d1d1ce0aa7");
             var supervisorRoleId = Guid.Parse("582880c3-f554-490f-a24e-526db35cffa5");
