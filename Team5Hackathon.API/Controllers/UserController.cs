@@ -327,7 +327,49 @@ namespace Team5Hackathon.API.Controllers
             };
             return Ok(response);
         }
-        
+        [HttpPost("request")]
+        [ProducesResponseType(typeof(ApiResponse<UserRequestDTO>), (int)HttpStatusCode.OK)]
+        public async Task<IActionResult> CreateUserRequest([FromBody] CreateUserRequestDTO dto)
+        {
+            try
+            {
+                var request = await _userService.CreateUserRequestAsync(dto);
+                return Ok(ApiResponse<UserRequestDTO>.SuccessResponse(request, "Request created successfully"));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponse<string>.FailResponse("Error creating request", new List<string> { ex.Message }));
+            }
+        }
+        [HttpGet("request/{requestId}")]
+        [ProducesResponseType(typeof(ApiResponse<UserRequestDTO>), (int)HttpStatusCode.OK)]
+        public async Task<IActionResult> GetUserRequest(Guid requestId)
+        {
+            try
+            {
+                var request = await _userService.GetUserRequestAsync(requestId);
+                if (request == null) return NotFound(ApiResponse<string>.FailResponse("Request not found"));
+                return Ok(ApiResponse<UserRequestDTO>.SuccessResponse(request));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponse<string>.FailResponse("Error fetching request", new List<string> { ex.Message }));
+            }
+        }
+        [HttpGet("{userId}/requests")]
+        [ProducesResponseType(typeof(ApiResponse<IEnumerable<UserRequestDTO>>), (int)HttpStatusCode.OK)]
+        public async Task<IActionResult> GetUserRequests(Guid userId)
+        {
+            try
+            {
+                var requests = await _userService.GetUserRequestsAsync(userId);
+                return Ok(ApiResponse<IEnumerable<UserRequestDTO>>.SuccessResponse(requests));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponse<string>.FailResponse("Error fetching requests", new List<string> { ex.Message }));
+            }
+        }
         private string GetNormalizedUserAgent()
         {
             var userAgentRaw = HttpContext.Request.Headers["User-Agent"].ToString();

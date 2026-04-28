@@ -36,6 +36,8 @@ namespace Team5Hackathon.Domain.RepositoriesContract
         Task<int> GetAccessFailedCountAsync(User user);
         Task<bool> IsValidClientAsync(string clientId);
         Task<bool> IsUserExistsAsync(Guid userId);
-        
+        Task<UserRequest> CreateUserRequestAsync(UserRequest request);
+        Task<UserRequest?> GetUserRequestByIdAsync(Guid requestId);
+        Task<IEnumerable<UserRequest>> GetUserRequestsByUserIdAsync(Guid userId);
     }
 }
