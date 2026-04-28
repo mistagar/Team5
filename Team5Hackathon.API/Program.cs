@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using System.Text;
 using Team5Hackathon.Application.Services;
 using Team5Hackathon.Domain.RepositoriesContract;
@@ -71,7 +72,27 @@ builder.Services.AddScoped<IUserService, UserService>();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    var apiKeyScheme = new OpenApiSecurityScheme
+    {
+        Name = "X-Api-Key",
+        Type = SecuritySchemeType.ApiKey,
+        In = ParameterLocation.Header,
+        Description = "Enter API key for secured endpoints.",
+        Reference = new OpenApiReference
+        {
+            Type = ReferenceType.SecurityScheme,
+            Id = "ApiKey"
+        }
+    };
+
+    options.AddSecurityDefinition("ApiKey", apiKeyScheme);
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        { apiKeyScheme, Array.Empty<string>() }
+    });
+});
 
 var app = builder.Build();
 
