@@ -21,6 +21,9 @@ public static class ServiceCollectionExtensions
         services.AddDbContext<AppDbContext>(options => options.UseSqlServer(connectionString, sqlServerOptionsAction => sqlServerOptionsAction.EnableRetryOnFailure()));
         services.AddScoped<IAuditLogRepository, AuditLogRepository>();
         services.AddScoped<IAuditService, AuditService>();
+        services.AddScoped<ICallRepository, CallRepository>();
+        services.AddScoped<ICallService, CallService>();
+        services.AddScoped<IAIService, AIService>();
         services.AddScoped<IAudioStreamIngestionService, AudioStreamIngestionService>();
         services.AddSingleton<IAudioStreamQueue, InMemoryAudioStreamQueue>();
         services.AddSingleton(new InMemoryAudioChunkBuffer(maxChunksPerCall: 25));
