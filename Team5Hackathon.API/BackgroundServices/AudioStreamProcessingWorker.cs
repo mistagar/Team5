@@ -7,6 +7,7 @@ namespace Team5Hackathon.API.BackgroundServices;
 
 public sealed class AudioStreamProcessingWorker : BackgroundService
 {
+    private const int TranscriptionWindowChunkCount = 5;
     private readonly IAudioStreamQueue _audioStreamQueue;
     private readonly InMemoryAudioChunkBuffer _buffer;
     private readonly ILogger<AudioStreamProcessingWorker> _logger;
@@ -31,10 +32,20 @@ public sealed class AudioStreamProcessingWorker : BackgroundService
             try
             {
                 _buffer.Add(chunk);
+                using var scope = _scopeFactory.CreateScope();
+                var transcriptionService = scope.ServiceProvider.GetRequiredService<ITranscriptionService>();
+                var mergedAudio = _buffer.GetLatestAudioWindow(chunk.CallId, TranscriptionWindowChunkCount);
+                var transcription = await transcriptionService.TranscribeAsync(
+                    mergedAudio,
+                    chunk.FileName,
+                    chunk.ContentType,
+                    stoppingToken);
+
                 _logger.LogInformation(
-                    "Recognition progress for CallId {CallId} at Sequence {Sequence}.",
+                    "Recognition progress for CallId {CallId} at Sequence {Sequence}. Transcript: {Transcript}",
                     chunk.CallId,
-                    chunk.Sequence);
+                    chunk.Sequence,
+                    string.IsNullOrWhiteSpace(transcription) ? "<none>" : transcription);
             }
             catch (Exception ex)
             {
