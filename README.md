@@ -58,3 +58,82 @@ Set these values in configuration (or environment variables / user secrets):
     "ApiKey": "YOUR_SECURE_API_KEY"
   }
 }
+<<<<<<< HEAD
+=======
+
+
+## Audio Streaming MVP
+
+### Endpoint
+`POST /api/stream/audio-chunk`
+
+### Request Contract
+```json
+{
+  "callId": "11111111-1111-1111-1111-111111111111",
+  "sequence": 1,
+  "chunkBase64": "AQIDBA==",
+  "sentAtUtc": "2026-04-28T12:00:00Z"
+}
+
+
+{
+  "success": true,
+  "data": {
+    "accepted": true,
+    "callId": "11111111-1111-1111-1111-111111111111",
+    "sequence": 1,
+    "correlationId": "31826d3eed6c43ecacc0530e85038a0c"
+  },
+  "message": null,
+  "errors": null
+}
+
+
+## New Update: Dynamic Audio Input for Transcription
+
+### What Was Newly Implemented
+We extended audio ingestion to support **dynamic input sources**:
+
+1. `chunkBase64` input (existing flow)
+2. `audioUrl` input (new flow)
+
+The backend now normalizes both into audio bytes before transcription.
+
+### New Behavior
+- If `chunkBase64` is provided, it is used directly.
+- If `chunkBase64` is empty and `audioUrl` is provided, backend downloads the audio and processes it.
+- Supported URL audio file types now include:
+  - `mp3`, `wav`, `webm`, `ogg`, `oga`, `m4a`, `mp4`, `flac`, `mpeg`, `mpga`
+
+### Endpoint (same endpoint, enhanced behavior)
+`POST /api/stream/audio-chunk`
+
+### New Request Example (audioUrl mode)
+```json
+{
+  "callId": "11111111-1111-1111-1111-111111111111",
+  "sequence": 1,
+  "chunkBase64": "",
+  "audioUrl": "https://raw.githubusercontent.com/vicradon/semantic-kernel-demos/refs/heads/main/assets/sounds/70-years-old-man.mp3",
+  "sentAtUtc": "2026-04-29T09:00:00Z"
+}
+
+{
+  "callId": "11111111-1111-1111-1111-111111111111",
+  "sequence": 2,
+  "chunkBase64": "<base64-audio-content>",
+  "audioUrl": "",
+  "sentAtUtc": "2026-04-29T09:01:00Z"
+}
+
+
+Processing Enhancement
+Worker now sends inferred fileName and contentType to Whisper.
+This improves compatibility across different audio formats.
+Result
+The pipeline now supports both:
+
+real-time chunk-based ingestion
+URL-based audio ingestion for quick demos/tests
+>>>>>>> aad58e4df299d06879af545321d6fe668beb3017
