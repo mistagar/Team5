@@ -58,6 +58,8 @@ Set these values in configuration (or environment variables / user secrets):
     "ApiKey": "YOUR_SECURE_API_KEY"
   }
 }
+<<<<<<< HEAD
+=======
 
 
 ## Audio Streaming MVP
@@ -134,3 +136,4 @@ The pipeline now supports both:
 
 real-time chunk-based ingestion
 URL-based audio ingestion for quick demos/tests
+>>>>>>> aad58e4df299d06879af545321d6fe668beb3017

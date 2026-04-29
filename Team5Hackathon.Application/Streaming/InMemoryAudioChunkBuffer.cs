@@ -25,6 +25,8 @@ public sealed class InMemoryAudioChunkBuffer
             }
         }
     }
+<<<<<<< HEAD
+=======
 
     public byte[] GetLatestAudioWindow(Guid callId, int maxChunksInWindow)
     {
@@ -49,4 +51,5 @@ public sealed class InMemoryAudioChunkBuffer
             return merged;
         }
     }
+>>>>>>> aad58e4df299d06879af545321d6fe668beb3017
 }
