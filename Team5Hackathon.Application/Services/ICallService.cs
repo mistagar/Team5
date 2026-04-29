@@ -18,5 +18,6 @@ namespace Team5Hackathon.Application.Services
         Task<bool> SendFollowUpMessageAsync(Guid messageId);
         Task<DashboardMetricsDTO> GetDashboardMetricsAsync();
         Task<ClientDashboardDTO> GetClientDashboardAsync(Guid clientId);
+        Task<AnalyticsDashboardDTO> GetAnalyticsDashboardAsync(int dailyVolumeDays = 30);
     }
 }

@@ -26,6 +26,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ICallRepository, CallRepository>();
         services.AddScoped<ICallService, CallService>();
         services.AddScoped<IAIService, AIService>();
+        services.AddScoped<ITextToSpeechService, AzureTextToSpeechService>();
         services.AddScoped<IAudioStreamIngestionService, AudioStreamIngestionService>();
         services.AddHttpClient<ITranscriptionService, WhisperTranscriptionService>();
         services.AddSingleton<IAudioStreamQueue, InMemoryAudioStreamQueue>();

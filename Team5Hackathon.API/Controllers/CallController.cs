@@ -161,6 +161,25 @@ namespace Team5Hackathon.API.Controllers
             }
         }
 
+        [Authorize(Roles = "Admin,Supervisor")]
+        [HttpGet("dashboard/analytics")]
+        [ProducesResponseType(typeof(ApiResponse<AnalyticsDashboardDTO>), (int)HttpStatusCode.OK)]
+        public async Task<IActionResult> GetAnalyticsDashboard([FromQuery] int days = 30)
+        {
+            try
+            {
+                if (days < 1 || days > 365)
+                    return BadRequest(ApiResponse<string>.FailResponse("days must be between 1 and 365."));
+
+                var analytics = await _callService.GetAnalyticsDashboardAsync(days);
+                return Ok(ApiResponse<AnalyticsDashboardDTO>.SuccessResponse(analytics));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponse<string>.FailResponse("Error fetching analytics", new List<string> { ex.Message }));
+            }
+        }
+
         [Authorize]
         [HttpGet("dashboard/client")]
         [ProducesResponseType(typeof(ApiResponse<ClientDashboardDTO>), (int)HttpStatusCode.OK)]

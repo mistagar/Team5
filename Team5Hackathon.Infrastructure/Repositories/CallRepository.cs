@@ -98,5 +98,74 @@ namespace Team5Hackathon.Infrastructure.Repositories
         {
             return await _context.Calls.Where(c => c.SatisfactionRating.HasValue).AverageAsync(c => c.SatisfactionRating);
         }
+
+        public async Task<int> GetTotalCallsAsync()
+        {
+            return await _context.Calls.CountAsync();
+        }
+
+        public async Task<int> GetActiveCallsAsync()
+        {
+            return await _context.Calls.CountAsync(c => c.Status == "active");
+        }
+
+        public async Task<int> GetEndedCallsAsync()
+        {
+            return await _context.Calls.CountAsync(c => c.Status == "ended");
+        }
+
+        public async Task<Dictionary<string, int>> GetCallsByCategoryAsync()
+        {
+            return await _context.Calls
+                .Where(c => c.Category != null)
+                .GroupBy(c => c.Category!)
+                .Select(g => new { Category = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.Category, x => x.Count);
+        }
+
+        public async Task<Dictionary<string, int>> GetCallsBySentimentAsync()
+        {
+            return await _context.Calls
+                .Where(c => c.Sentiment != null)
+                .GroupBy(c => c.Sentiment!)
+                .Select(g => new { Sentiment = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.Sentiment, x => x.Count);
+        }
+
+        public async Task<Dictionary<string, int>> GetUnresolvedByCategoryAsync()
+        {
+            return await _context.Calls
+                .Where(c => !c.IsResolved && c.Category != null && c.Status == "ended")
+                .GroupBy(c => c.Category!)
+                .Select(g => new { Category = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.Category, x => x.Count);
+        }
+
+        public async Task<Dictionary<string, int>> GetDailyCallVolumeAsync(int days)
+        {
+            var since = DateTime.UtcNow.Date.AddDays(-days + 1);
+            var raw = await _context.Calls
+                .Where(c => c.StartTime >= since)
+                .GroupBy(c => c.StartTime.Date)
+                .Select(g => new { Date = g.Key, Count = g.Count() })
+                .ToListAsync();
+
+            // Fill in zeros for days with no calls so the chart has a continuous series
+            return Enumerable.Range(0, days)
+                .Select(i => since.AddDays(i))
+                .ToDictionary(
+                    date => date.ToString("yyyy-MM-dd"),
+                    date => raw.FirstOrDefault(r => r.Date == date)?.Count ?? 0);
+        }
+
+        public async Task<double?> GetAverageCallDurationAsync()
+        {
+            var durations = await _context.Calls
+                .Where(c => c.Status == "ended" && c.EndTime.HasValue)
+                .Select(c => EF.Functions.DateDiffMinute(c.StartTime, c.EndTime!.Value))
+                .ToListAsync();
+
+            return durations.Count > 0 ? durations.Average(d => (double)d) : null;
+        }
     }
 }

@@ -39,5 +39,6 @@ namespace Team5Hackathon.Domain.RepositoriesContract
         Task<UserRequest> CreateUserRequestAsync(UserRequest request);
         Task<UserRequest?> GetUserRequestByIdAsync(Guid requestId);
         Task<IEnumerable<UserRequest>> GetUserRequestsByUserIdAsync(Guid userId);
+        Task<bool> UpdateUserRequestAsync(UserRequest request);
     }
 }
