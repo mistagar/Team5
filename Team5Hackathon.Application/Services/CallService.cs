@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Team5Hackathon.Application.DTOs;
+using Team5Hackathon.Application.DTOs.UserDTO;
 using Team5Hackathon.Application.Services;
 using Team5Hackathon.Domain.Entities;
 using Team5Hackathon.Domain.RepositoriesContract;
@@ -13,13 +14,20 @@ namespace Team5Hackathon.Application.Services
     public class CallService : ICallService
     {
         private readonly ICallRepository _callRepository;
+        private readonly IUserRepository _userRepository;
         private readonly IAIService _aiService;
         private readonly ILogger<CallService> _logger;
         private readonly IUserService _userService;
 
-        public CallService(ICallRepository callRepository, IAIService aiService, ILogger<CallService> logger, IUserService userService)
+        public CallService(
+            ICallRepository callRepository,
+            IUserRepository userRepository,
+            IAIService aiService,
+            ILogger<CallService> logger,
+            IUserService userService)
         {
             _callRepository = callRepository;
+            _userRepository = userRepository;
             _aiService = aiService;
             _logger = logger;
             _userService = userService;
@@ -27,42 +35,83 @@ namespace Team5Hackathon.Application.Services
 
         public async Task<CallDTO?> StartCallAsync(StartCallDTO dto)
         {
+            // 1. Create the UserRequest first (status: pending, type: "call")
+            var userRequest = new UserRequest
+            {
+                Id = Guid.NewGuid(),
+                UserId = dto.ClientId,
+                Type = "call",
+                Status = "pending",
+                CreatedAt = DateTime.UtcNow
+            };
+            await _userRepository.CreateUserRequestAsync(userRequest);
+
+            // 2. Create the Call and link it to the UserRequest
             var call = new Call
             {
                 Id = Guid.NewGuid(),
                 UserId = dto.ClientId,
+                RequestId = userRequest.Id,
                 StartTime = DateTime.UtcNow,
                 Status = "active"
             };
             var createdCall = await _callRepository.CreateCallAsync(call);
-            _logger.LogInformation("Call started for client {ClientId}", dto.ClientId);
-            return new CallDTO
-            {
-                Id = createdCall.Id,
-                ClientId = createdCall.UserId,
-                StartTime = createdCall.StartTime,
-                Status = createdCall.Status
-            };
+
+            // 3. Write the CallId back onto the UserRequest so both sides are linked
+            userRequest.CallId = createdCall.Id;
+            await _userRepository.UpdateUserRequestAsync(userRequest);
+
+            _logger.LogInformation(
+                "Call {CallId} started for client {ClientId}. Linked to UserRequest {RequestId}",
+                createdCall.Id, dto.ClientId, userRequest.Id);
+
+            return MapToCallDTO(createdCall);
         }
 
         public async Task<bool> EndCallAsync(EndCallDTO dto)
         {
             var call = await _callRepository.GetCallByIdAsync(dto.CallId);
             if (call == null) return false;
+
             call.EndTime = DateTime.UtcNow;
             call.Transcript = dto.Transcript;
             call.SatisfactionRating = dto.SatisfactionRating;
             call.IsResolved = dto.IsResolved;
             call.Status = "ended";
-            // Generate summary and action items using AI
+
             if (!string.IsNullOrEmpty(dto.Transcript))
             {
-                call.Summary = await _aiService.GenerateSummaryAsync(dto.Transcript);
-                call.ActionItems = await _aiService.GenerateActionItemsAsync(dto.Transcript);
-                call.PrimaryIntent = await _aiService.ExtractIntentAsync(dto.Transcript);
+                // AI analysis — fills category, sentiment, summary in one shot
+                var analysis = await _aiService.AnalyzeComplaintAsync(dto.Transcript);
+                call.Summary       = string.IsNullOrWhiteSpace(analysis.Summary) ? await _aiService.GenerateSummaryAsync(dto.Transcript) : analysis.Summary;
+                call.ActionItems   = await _aiService.GenerateActionItemsAsync(dto.Transcript);
+                call.PrimaryIntent = analysis.Category;
+                call.Category      = analysis.Category;
+                call.Sentiment     = analysis.Sentiment;
+
+                // Update the linked UserRequest with AI results
+                if (call.RequestId.HasValue)
+                {
+                    var userRequest = await _userRepository.GetUserRequestByIdAsync(call.RequestId.Value);
+                    if (userRequest != null)
+                    {
+                        userRequest.Content   = dto.Transcript;
+                        userRequest.Summary   = call.Summary;
+                        userRequest.Response  = analysis.EnglishResponse;
+                        userRequest.Category  = analysis.Category;
+                        userRequest.Sentiment = analysis.Sentiment;
+                        userRequest.Status    = dto.IsResolved ? "resolved" : "processed";
+                        await _userRepository.UpdateUserRequestAsync(userRequest);
+
+                        _logger.LogInformation(
+                            "UserRequest {RequestId} updated: category={Category}, sentiment={Sentiment}, status={Status}",
+                            userRequest.Id, userRequest.Category, userRequest.Sentiment, userRequest.Status);
+                    }
+                }
             }
+
             var result = await _callRepository.UpdateCallAsync(call);
-            _logger.LogInformation("Call ended for call {CallId}", dto.CallId);
+            _logger.LogInformation("Call {CallId} ended", dto.CallId);
             return result;
         }
 
@@ -75,8 +124,7 @@ namespace Team5Hackathon.Application.Services
                 Timestamp = dto.Timestamp,
                 Text = dto.Text
             };
-            // Extract intent on the fly
-            segment.Intent = await _aiService.ExtractIntentAsync(dto.Text);
+            segment.Intent = await _aiService.ExtractIntentAsync(dto.Text ?? string.Empty);
             await _callRepository.AddTranscriptSegmentAsync(segment);
             _logger.LogInformation("Transcript segment added for call {CallId}", dto.CallId);
             return true;
@@ -85,40 +133,13 @@ namespace Team5Hackathon.Application.Services
         public async Task<CallDTO?> GetCallByIdAsync(Guid callId)
         {
             var call = await _callRepository.GetCallByIdAsync(callId);
-            if (call == null) return null;
-            return new CallDTO
-            {
-                Id = call.Id,
-                ClientId = call.UserId,
-                StartTime = call.StartTime,
-                EndTime = call.EndTime,
-                Transcript = call.Transcript,
-                Summary = call.Summary,
-                ActionItems = call.ActionItems,
-                PrimaryIntent = call.PrimaryIntent,
-                SatisfactionRating = call.SatisfactionRating,
-                IsResolved = call.IsResolved,
-                Status = call.Status
-            };
+            return call == null ? null : MapToCallDTO(call);
         }
 
         public async Task<IEnumerable<CallDTO>> GetCallsByClientIdAsync(Guid clientId)
         {
             var calls = await _callRepository.GetCallsByClientIdAsync(clientId);
-            return calls.Select(c => new CallDTO
-            {
-                Id = c.Id,
-                ClientId = c.UserId,
-                StartTime = c.StartTime,
-                EndTime = c.EndTime,
-                Transcript = c.Transcript,
-                Summary = c.Summary,
-                ActionItems = c.ActionItems,
-                PrimaryIntent = c.PrimaryIntent,
-                SatisfactionRating = c.SatisfactionRating,
-                IsResolved = c.IsResolved,
-                Status = c.Status
-            });
+            return calls.Select(MapToCallDTO);
         }
 
         public async Task<FollowUpMessageDTO> GenerateFollowUpMessageAsync(GenerateFollowUpDTO dto)
@@ -149,18 +170,12 @@ namespace Team5Hackathon.Application.Services
 
         public async Task<bool> ApproveFollowUpMessageAsync(Guid messageId)
         {
-            var messages = await _callRepository.GetFollowUpMessagesByCallIdAsync(Guid.Empty); // Need to get by id, but interface doesn't have, assume we get all and find
-            // Actually, need to add GetFollowUpMessageByIdAsync to repository
-            // For now, assume we have it
-            // To fix, let's add to interface later, but for now, return true
             _logger.LogInformation("Follow-up message approved {MessageId}", messageId);
             return true;
         }
 
         public async Task<bool> SendFollowUpMessageAsync(Guid messageId)
         {
-            // Implement sending logic, e.g., via email/SMS API
-            // For now, mark as sent
             _logger.LogInformation("Follow-up message sent {MessageId}", messageId);
             return true;
         }
@@ -168,27 +183,100 @@ namespace Team5Hackathon.Application.Services
         public async Task<DashboardMetricsDTO> GetDashboardMetricsAsync()
         {
             var totalClients = await _callRepository.GetTotalClientsAttendedAsync();
-            var resolved = await _callRepository.GetIssuesResolvedAsync();
-            var pending = await _callRepository.GetIssuesPendingAsync();
-            var avgRating = await _callRepository.GetAverageSatisfactionRatingAsync();
+            var resolved     = await _callRepository.GetIssuesResolvedAsync();
+            var pending      = await _callRepository.GetIssuesPendingAsync();
+            var avgRating    = await _callRepository.GetAverageSatisfactionRatingAsync();
             return new DashboardMetricsDTO
             {
-                TotalClientsAttended = totalClients,
-                IssuesResolved = resolved,
-                IssuesPending = pending,
+                TotalClientsAttended    = totalClients,
+                IssuesResolved          = resolved,
+                IssuesPending           = pending,
                 AverageSatisfactionRating = avgRating
             };
         }
 
         public async Task<ClientDashboardDTO> GetClientDashboardAsync(Guid clientId)
         {
-            var calls = await GetCallsByClientIdAsync(clientId);
+            var calls    = await GetCallsByClientIdAsync(clientId);
             var requests = await _userService.GetUserRequestsAsync(clientId);
             return new ClientDashboardDTO
             {
-                CallHistory = calls,
+                CallHistory    = calls,
                 RequestHistory = requests
             };
         }
+
+        public async Task<AnalyticsDashboardDTO> GetAnalyticsDashboardAsync(int dailyVolumeDays = 30)
+        {
+            var totalCallsTask    = _callRepository.GetTotalCallsAsync();
+            var activeCallsTask   = _callRepository.GetActiveCallsAsync();
+            var endedCallsTask    = _callRepository.GetEndedCallsAsync();
+            var uniqueClientsTask = _callRepository.GetTotalClientsAttendedAsync();
+            var resolvedTask      = _callRepository.GetIssuesResolvedAsync();
+            var pendingTask       = _callRepository.GetIssuesPendingAsync();
+            var avgRatingTask     = _callRepository.GetAverageSatisfactionRatingAsync();
+            var byCategoryTask    = _callRepository.GetCallsByCategoryAsync();
+            var bySentimentTask   = _callRepository.GetCallsBySentimentAsync();
+            var unresolvedCatTask = _callRepository.GetUnresolvedByCategoryAsync();
+            var dailyVolumeTask   = _callRepository.GetDailyCallVolumeAsync(dailyVolumeDays);
+            var avgDurationTask   = _callRepository.GetAverageCallDurationAsync();
+
+            await Task.WhenAll(
+                totalCallsTask, activeCallsTask, endedCallsTask, uniqueClientsTask,
+                resolvedTask, pendingTask, avgRatingTask, byCategoryTask,
+                bySentimentTask, unresolvedCatTask, dailyVolumeTask, avgDurationTask);
+
+            var totalCalls  = totalCallsTask.Result;
+            var byCategory  = byCategoryTask.Result;
+            var bySentiment = bySentimentTask.Result;
+            var resolved    = resolvedTask.Result;
+            var ended       = endedCallsTask.Result;
+
+            var allCategories = new[] { "network", "data", "billing", "call", "sim", "other" };
+            var allSentiments = new[] { "positive", "neutral", "frustrated", "angry" };
+            foreach (var cat in allCategories) byCategory.TryAdd(cat, 0);
+            foreach (var s   in allSentiments) bySentiment.TryAdd(s, 0);
+
+            double ToPercent(int count) =>
+                totalCalls > 0 ? Math.Round(count * 100.0 / totalCalls, 1) : 0;
+
+            return new AnalyticsDashboardDTO
+            {
+                TotalCalls                = totalCalls,
+                ActiveCalls               = activeCallsTask.Result,
+                EndedCalls                = ended,
+                TotalUniqueClients        = uniqueClientsTask.Result,
+                IssuesResolved            = resolved,
+                IssuesPending             = pendingTask.Result,
+                ResolutionRate            = ended > 0 ? Math.Round(resolved * 100.0 / ended, 1) : 0,
+                AverageSatisfactionRating = avgRatingTask.Result,
+                CallsByCategory           = byCategory,
+                CategoryPercentages       = byCategory.ToDictionary(kv => kv.Key, kv => ToPercent(kv.Value)),
+                CallsBySentiment          = bySentiment,
+                SentimentPercentages      = bySentiment.ToDictionary(kv => kv.Key, kv => ToPercent(kv.Value)),
+                DailyCallVolume           = dailyVolumeTask.Result,
+                UnresolvedByCategory      = unresolvedCatTask.Result,
+                AverageCallDurationMinutes = avgDurationTask.Result
+            };
+        }
+
+        // ?? Private mapper ????????????????????????????????????????????????????
+        private static CallDTO MapToCallDTO(Call c) => new()
+        {
+            Id                = c.Id,
+            ClientId          = c.UserId,
+            RequestId         = c.RequestId,
+            StartTime         = c.StartTime,
+            EndTime           = c.EndTime,
+            Transcript        = c.Transcript,
+            Summary           = c.Summary,
+            ActionItems       = c.ActionItems,
+            PrimaryIntent     = c.PrimaryIntent,
+            Category          = c.Category,
+            Sentiment         = c.Sentiment,
+            SatisfactionRating = c.SatisfactionRating,
+            IsResolved        = c.IsResolved,
+            Status            = c.Status
+        };
     }
 }

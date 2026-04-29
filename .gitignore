@@ -363,12 +363,12 @@ MigrationBackup/
 FodyWeavers.xsd.dotnet/
 
 .dotnet/
-<<<<<<< HEAD
-=======
 Team5Hackathon.API/appsettings.json
 Team5Hackathon.API/appsettings.Development.json
 
 Team5Hackathon.API/appsettings.json
 Team5Hackathon.API/appsettings.Development.json
->>>>>>> aad58e4df299d06879af545321d6fe668beb3017
+Team5Hackathon.API/appsettings.json
+Team5Hackathon.API/appsettings.json
+Team5Hackathon.API/appsettings.json
 Team5Hackathon.API/appsettings.json

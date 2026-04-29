@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Team5Hackathon.Infrastructure.Persistence;
 
@@ -11,9 +12,11 @@ using Team5Hackathon.Infrastructure.Persistence;
 namespace Team5Hackathon.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260429124032_AddCallCategoryAndSentiment")]
+    partial class AddCallCategoryAndSentiment
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -208,9 +211,6 @@ namespace Team5Hackathon.Infrastructure.Migrations
                     b.Property<string>("PrimaryIntent")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
-
-                    b.Property<Guid?>("RequestId")
-                        .HasColumnType("uniqueidentifier");
 
                     b.Property<double?>("SatisfactionRating")
                         .HasColumnType("float");
@@ -450,13 +450,6 @@ namespace Team5Hackathon.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid?>("CallId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Category")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
                     b.Property<string>("Content")
                         .HasMaxLength(5000)
                         .HasColumnType("nvarchar(max)");
@@ -467,10 +460,6 @@ namespace Team5Hackathon.Infrastructure.Migrations
                     b.Property<string>("Response")
                         .HasMaxLength(5000)
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Sentiment")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("Status")
                         .HasMaxLength(50)
@@ -489,8 +478,6 @@ namespace Team5Hackathon.Infrastructure.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("CallId");
 
                     b.HasIndex("UserId");
 

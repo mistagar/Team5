@@ -14,8 +14,12 @@ namespace Team5Hackathon.Domain.Entities
         public string? Summary { get; set; }
         public string? ActionItems { get; set; }
         public string? PrimaryIntent { get; set; } // e.g., "complaint", "enquiry"
+        public string? Category { get; set; } 
+        public string? Sentiment { get; set; } 
         public double? SatisfactionRating { get; set; }
         public bool IsResolved { get; set; }
         public string? Status { get; set; } // e.g., "active", "ended"
+       
+        public Guid? RequestId { get; set; }
     }
 }

@@ -7,12 +7,18 @@ namespace Team5Hackathon.Application.DTOs
     {
         public Guid Id { get; set; }
         public Guid ClientId { get; set; }
+
+        /// <summary>The UserRequest record that was auto-created when this call started.</summary>
+        public Guid? RequestId { get; set; }
+
         public DateTime StartTime { get; set; }
         public DateTime? EndTime { get; set; }
         public string? Transcript { get; set; }
         public string? Summary { get; set; }
         public string? ActionItems { get; set; }
         public string? PrimaryIntent { get; set; }
+        public string? Category { get; set; }
+        public string? Sentiment { get; set; }
         public double? SatisfactionRating { get; set; }
         public bool IsResolved { get; set; }
         public string? Status { get; set; }

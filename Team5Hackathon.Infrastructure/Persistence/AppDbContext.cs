@@ -71,6 +71,8 @@ namespace Team5Hackathon.Infrastructure.Persistence
                 entity.Property(c => c.ActionItems).HasMaxLength(2000);
                 entity.Property(c => c.PrimaryIntent).HasMaxLength(100);
                 entity.Property(c => c.Status).HasMaxLength(50);
+                entity.Property(c => c.Category).HasMaxLength(50);
+                entity.Property(c => c.Sentiment).HasMaxLength(50);
             });
 
             builder.Entity<TranscriptSegment>(entity =>
@@ -100,6 +102,10 @@ namespace Team5Hackathon.Infrastructure.Persistence
                 entity.Property(ur => ur.Status).HasMaxLength(50);
                 entity.Property(ur => ur.Summary).HasMaxLength(2000);
                 entity.Property(ur => ur.Response).HasMaxLength(5000);
+                entity.Property(ur => ur.Category).HasMaxLength(50);
+                entity.Property(ur => ur.Sentiment).HasMaxLength(50);
+                // CallId is optional — null for non-call requests
+                entity.HasIndex(ur => ur.CallId);
             });
 
             var adminRoleId = Guid.Parse("c4a3298c-6198-4d12-bd1a-56d1d1ce0aa7");

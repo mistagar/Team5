@@ -22,5 +22,15 @@ namespace Team5Hackathon.Domain.RepositoriesContract
         Task<int> GetIssuesResolvedAsync();
         Task<int> GetIssuesPendingAsync();
         Task<double?> GetAverageSatisfactionRatingAsync();
+
+        // Analytics
+        Task<int> GetTotalCallsAsync();
+        Task<int> GetActiveCallsAsync();
+        Task<int> GetEndedCallsAsync();
+        Task<Dictionary<string, int>> GetCallsByCategoryAsync();
+        Task<Dictionary<string, int>> GetCallsBySentimentAsync();
+        Task<Dictionary<string, int>> GetUnresolvedByCategoryAsync();
+        Task<Dictionary<string, int>> GetDailyCallVolumeAsync(int days);
+        Task<double?> GetAverageCallDurationAsync();
     }
 }
