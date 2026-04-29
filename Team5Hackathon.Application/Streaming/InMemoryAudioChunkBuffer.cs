@@ -25,4 +25,28 @@ public sealed class InMemoryAudioChunkBuffer
             }
         }
     }
+
+    public byte[] GetLatestAudioWindow(Guid callId, int maxChunksInWindow)
+    {
+        lock (_sync)
+        {
+            if (!_chunksByCall.TryGetValue(callId, out var list) || list.Count == 0)
+            {
+                return Array.Empty<byte>();
+            }
+
+            var chunks = list.Reverse().Take(maxChunksInWindow).Reverse().ToList();
+            var totalBytes = chunks.Sum(x => x.ChunkBytes.Length);
+            var merged = new byte[totalBytes];
+            var offset = 0;
+
+            foreach (var chunk in chunks)
+            {
+                Buffer.BlockCopy(chunk.ChunkBytes, 0, merged, offset, chunk.ChunkBytes.Length);
+                offset += chunk.ChunkBytes.Length;
+            }
+
+            return merged;
+        }
+    }
 }
