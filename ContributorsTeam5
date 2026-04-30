@@ -1,0 +1,4 @@
+Esther Oduola -I designed and implemented an AI-powered customer complaint handling system that converts user input into structured insights and automated responses, including support for Nigerian Pidgin.
+Kelikume K. Oshogbo - Implemented AI controller and related service, also implemented on User and Call Controllers and related services
+Samson Dominic - I implemented the backend security and streaming MVP foundation: API security middleware (correlation ID, headers, exception handling, API key + Swagger auth), reusable audit logging, and a thin audio-chunk endpoint that validates input (including sequence and size limits), accepts base64 or audio URL, queues work asynchronously, and triggers background Whisper transcription with correlation-based traceability.
+Shalom Gar - Worked as a Product manager and refining implementation flows and also presentation
