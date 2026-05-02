@@ -73,6 +73,8 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddSingleton<CallRecordingService>();
+builder.Services.AddScoped<ICallRecordingService, CallRecordingService>();
 
 
 
