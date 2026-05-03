@@ -96,7 +96,7 @@ namespace Team5Hackathon.Infrastructure.Persistence
             builder.Entity<UserRequest>(entity =>
             {
                 entity.HasKey(ur => ur.Id);
-                entity.HasOne<User>().WithMany(u => u.Requests).HasForeignKey(ur => ur.UserId);
+                entity.HasOne<ApplicationUser>().WithMany().HasForeignKey(ur => ur.UserId);
                 entity.Property(ur => ur.Type).HasMaxLength(50);
                 entity.Property(ur => ur.Content).HasMaxLength(5000);
                 entity.Property(ur => ur.Status).HasMaxLength(50);

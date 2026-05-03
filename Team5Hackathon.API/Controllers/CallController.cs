@@ -5,6 +5,7 @@ using System.Security.Claims;
 using Team5Hackathon.API.DTOs;
 using Team5Hackathon.Application.DTOs;
 using Team5Hackathon.Application.Services;
+using Team5Hackathon.Application.Streaming;
 
 namespace Team5Hackathon.API.Controllers
 {
@@ -14,11 +15,19 @@ namespace Team5Hackathon.API.Controllers
     {
         private readonly ICallService _callService;
         private readonly ICallRecordingService _callRecordingService;
+        private readonly ITranscriptionService _transcriptionService;
+        private readonly InMemoryAudioChunkBuffer _audioBuffer;
 
-        public CallController(ICallService callService, ICallRecordingService callRecordingService)
+        public CallController(
+            ICallService callService,
+            ICallRecordingService callRecordingService,
+            ITranscriptionService transcriptionService,
+            InMemoryAudioChunkBuffer audioBuffer)
         {
             _callService = callService;
             _callRecordingService = callRecordingService;
+            _transcriptionService = transcriptionService;
+            _audioBuffer = audioBuffer;
         }
 
         [HttpPost("start")]
@@ -46,12 +55,33 @@ namespace Team5Hackathon.API.Controllers
         {
             try
             {
+                // 1. Assemble the complete audio from all buffered chunks — one valid file.
+                var fullAudio = _audioBuffer.GetAllAudio(dto.CallId);
+
+                // 2. Detect the actual format from the first buffered chunk so we use the
+                //    correct MIME type and file extension regardless of browser.
+                var (mimeType, fileExtension) = _audioBuffer.GetCallFormat(dto.CallId);
+
+                // 3. Transcribe once using the complete recording.
+                if (string.IsNullOrWhiteSpace(dto.Transcript) && fullAudio.Length > 0)
+                {
+                    dto.Transcript = await _transcriptionService.TranscribeAsync(
+                        fullAudio,
+                        $"call_{dto.CallId}{fileExtension}",
+                        mimeType);
+                }
+
+                // 4. End the call (triggers AI analysis inside CallService).
                 var success = await _callService.EndCallAsync(dto);
                 if (!success) return BadRequest(ApiResponse<string>.FailResponse("Failed to end call"));
 
-                var recording = await _callRecordingService.StopRecording(dto.CallId);
+                // 5. Release buffer memory for this call.
+                _audioBuffer.Remove(dto.CallId);
 
-                return File(recording, "audio/webm", $"call_{dto.CallId}.webm");
+                // 6. Return the recording bytes to the client with the correct MIME type.
+                var recording = await _callRecordingService.StopRecording(dto.CallId);
+                var audioToReturn = recording.Length > 0 ? recording : fullAudio;
+                return File(audioToReturn, mimeType, $"call_{dto.CallId}{fileExtension}");
             }
             catch (Exception ex)
             {
