@@ -5,9 +5,15 @@ using Team5Hackathon.Application.Streaming;
 
 namespace Team5Hackathon.API.BackgroundServices;
 
+/// <summary>
+/// Consumes the audio chunk queue and stores chunks in the in-memory buffer.
+/// Transcription is intentionally NOT done here — it happens once per call
+/// when the call ends, using the complete assembled audio.  Attempting to
+/// transcribe mid-stream WebM clusters produces invalid-file errors and
+/// exhausts the Azure Whisper S0 rate limit.
+/// </summary>
 public sealed class AudioStreamProcessingWorker : BackgroundService
 {
-    private const int TranscriptionWindowChunkCount = 5;
     private readonly IAudioStreamQueue _audioStreamQueue;
     private readonly InMemoryAudioChunkBuffer _buffer;
     private readonly ILogger<AudioStreamProcessingWorker> _logger;
@@ -32,42 +38,31 @@ public sealed class AudioStreamProcessingWorker : BackgroundService
             try
             {
                 _buffer.Add(chunk);
-                using var scope = _scopeFactory.CreateScope();
-                var transcriptionService = scope.ServiceProvider.GetRequiredService<ITranscriptionService>();
-                var mergedAudio = _buffer.GetLatestAudioWindow(chunk.CallId, TranscriptionWindowChunkCount);
-                var transcription = await transcriptionService.TranscribeAsync(
-                    mergedAudio,
-                    chunk.FileName,
-                    chunk.ContentType,
-                    stoppingToken);
 
-                _logger.LogInformation(
-                    "Recognition progress for CallId {CallId} at Sequence {Sequence}. Transcript: {Transcript}",
-                    chunk.CallId,
-                    chunk.Sequence,
-                    string.IsNullOrWhiteSpace(transcription) ? "<none>" : transcription);
+                _logger.LogDebug(
+                    "Buffered audio chunk for CallId {CallId}, Sequence {Sequence} ({Bytes} bytes).",
+                    chunk.CallId, chunk.Sequence, chunk.ChunkBytes.Length);
             }
             catch (Exception ex)
             {
                 _logger.LogError(
                     ex,
-                    "Audio stream processing failed for CallId {CallId}, Sequence {Sequence}.",
-                    chunk.CallId,
-                    chunk.Sequence);
+                    "Failed to buffer audio chunk for CallId {CallId}, Sequence {Sequence}.",
+                    chunk.CallId, chunk.Sequence);
 
                 using var scope = _scopeFactory.CreateScope();
                 var auditService = scope.ServiceProvider.GetRequiredService<IAuditService>();
                 await auditService.RecordAsync(
-                new AuditEntry
-                {
-                    Action = AuditActionNames.StreamAudioChunkProcess,
-                    Outcome = "failed",
-                    EntityName = "Call",
-                    EntityId = chunk.CallId.ToString(),
-                    Description = "Failed to process queued audio chunk.",
-                    CorrelationId = chunk.CorrelationId
-                },
-                stoppingToken);
+                    new AuditEntry
+                    {
+                        Action = AuditActionNames.StreamAudioChunkProcess,
+                        Outcome = "failed",
+                        EntityName = "Call",
+                        EntityId = chunk.CallId.ToString(),
+                        Description = "Failed to buffer queued audio chunk.",
+                        CorrelationId = chunk.CorrelationId
+                    },
+                    stoppingToken);
             }
         }
     }

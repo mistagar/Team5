@@ -27,10 +27,12 @@ public sealed class AudioStreamController : ControllerBase
         try
         {
             var correlationId = HttpContext.TraceIdentifier;
+
+            
             var response = await _audioStreamIngestionService.IngestChunkAsync(
                 request,
                 correlationId,
-                cancellationToken);
+                CancellationToken.None);
 
             if (!string.IsNullOrEmpty(request.ChunkBase64))
             {
@@ -43,6 +45,11 @@ public sealed class AudioStreamController : ControllerBase
         catch (InvalidAudioChunkException ex)
         {
             return BadRequest(ApiResponse<AudioChunkIngestionResponse>.FailResponse(ex.Message));
+        }
+        catch (OperationCanceledException)
+        {
+            
+            return StatusCode(StatusCodes.Status499ClientClosedRequest);
         }
     }
 }

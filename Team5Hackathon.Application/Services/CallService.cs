@@ -208,29 +208,18 @@ namespace Team5Hackathon.Application.Services
 
         public async Task<AnalyticsDashboardDTO> GetAnalyticsDashboardAsync(int dailyVolumeDays = 30)
         {
-            var totalCallsTask    = _callRepository.GetTotalCallsAsync();
-            var activeCallsTask   = _callRepository.GetActiveCallsAsync();
-            var endedCallsTask    = _callRepository.GetEndedCallsAsync();
-            var uniqueClientsTask = _callRepository.GetTotalClientsAttendedAsync();
-            var resolvedTask      = _callRepository.GetIssuesResolvedAsync();
-            var pendingTask       = _callRepository.GetIssuesPendingAsync();
-            var avgRatingTask     = _callRepository.GetAverageSatisfactionRatingAsync();
-            var byCategoryTask    = _callRepository.GetCallsByCategoryAsync();
-            var bySentimentTask   = _callRepository.GetCallsBySentimentAsync();
-            var unresolvedCatTask = _callRepository.GetUnresolvedByCategoryAsync();
-            var dailyVolumeTask   = _callRepository.GetDailyCallVolumeAsync(dailyVolumeDays);
-            var avgDurationTask   = _callRepository.GetAverageCallDurationAsync();
-
-            await Task.WhenAll(
-                totalCallsTask, activeCallsTask, endedCallsTask, uniqueClientsTask,
-                resolvedTask, pendingTask, avgRatingTask, byCategoryTask,
-                bySentimentTask, unresolvedCatTask, dailyVolumeTask, avgDurationTask);
-
-            var totalCalls  = totalCallsTask.Result;
-            var byCategory  = byCategoryTask.Result;
-            var bySentiment = bySentimentTask.Result;
-            var resolved    = resolvedTask.Result;
-            var ended       = endedCallsTask.Result;
+            var totalCalls    = await _callRepository.GetTotalCallsAsync();
+            var activeCalls   = await _callRepository.GetActiveCallsAsync();
+            var endedCalls    = await _callRepository.GetEndedCallsAsync();
+            var uniqueClients = await _callRepository.GetTotalClientsAttendedAsync();
+            var resolved      = await _callRepository.GetIssuesResolvedAsync();
+            var pending       = await _callRepository.GetIssuesPendingAsync();
+            var avgRating     = await _callRepository.GetAverageSatisfactionRatingAsync();
+            var byCategory    = await _callRepository.GetCallsByCategoryAsync();
+            var bySentiment   = await _callRepository.GetCallsBySentimentAsync();
+            var unresolvedCat = await _callRepository.GetUnresolvedByCategoryAsync();
+            var dailyVolume   = await _callRepository.GetDailyCallVolumeAsync(dailyVolumeDays);
+            var avgDuration   = await _callRepository.GetAverageCallDurationAsync();
 
             var allCategories = new[] { "network", "data", "billing", "call", "sim", "other" };
             var allSentiments = new[] { "positive", "neutral", "frustrated", "angry" };
@@ -242,21 +231,21 @@ namespace Team5Hackathon.Application.Services
 
             return new AnalyticsDashboardDTO
             {
-                TotalCalls                = totalCalls,
-                ActiveCalls               = activeCallsTask.Result,
-                EndedCalls                = ended,
-                TotalUniqueClients        = uniqueClientsTask.Result,
-                IssuesResolved            = resolved,
-                IssuesPending             = pendingTask.Result,
-                ResolutionRate            = ended > 0 ? Math.Round(resolved * 100.0 / ended, 1) : 0,
-                AverageSatisfactionRating = avgRatingTask.Result,
-                CallsByCategory           = byCategory,
-                CategoryPercentages       = byCategory.ToDictionary(kv => kv.Key, kv => ToPercent(kv.Value)),
-                CallsBySentiment          = bySentiment,
-                SentimentPercentages      = bySentiment.ToDictionary(kv => kv.Key, kv => ToPercent(kv.Value)),
-                DailyCallVolume           = dailyVolumeTask.Result,
-                UnresolvedByCategory      = unresolvedCatTask.Result,
-                AverageCallDurationMinutes = avgDurationTask.Result
+                TotalCalls                 = totalCalls,
+                ActiveCalls                = activeCalls,
+                EndedCalls                 = endedCalls,
+                TotalUniqueClients         = uniqueClients,
+                IssuesResolved             = resolved,
+                IssuesPending              = pending,
+                ResolutionRate             = endedCalls > 0 ? Math.Round(resolved * 100.0 / endedCalls, 1) : 0,
+                AverageSatisfactionRating  = avgRating,
+                CallsByCategory            = byCategory,
+                CategoryPercentages        = byCategory.ToDictionary(kv => kv.Key, kv => ToPercent(kv.Value)),
+                CallsBySentiment           = bySentiment,
+                SentimentPercentages       = bySentiment.ToDictionary(kv => kv.Key, kv => ToPercent(kv.Value)),
+                DailyCallVolume            = dailyVolume,
+                UnresolvedByCategory       = unresolvedCat,
+                AverageCallDurationMinutes = avgDuration
             };
         }
 
