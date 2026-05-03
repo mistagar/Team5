@@ -145,7 +145,7 @@ namespace Team5Hackathon.API.Controllers
             }
         }
 
-        [Authorize(Roles = "Admin")]
+        //[Authorize(Roles = "Admin")]
         [HttpGet("dashboard/metrics")]
         [ProducesResponseType(typeof(ApiResponse<DashboardMetricsDTO>), (int)HttpStatusCode.OK)]
         public async Task<IActionResult> GetDashboardMetrics()
@@ -161,7 +161,7 @@ namespace Team5Hackathon.API.Controllers
             }
         }
 
-        [Authorize(Roles = "Admin,Supervisor")]
+       // [Authorize(Roles = "Admin,Supervisor")]
         [HttpGet("dashboard/analytics")]
         [ProducesResponseType(typeof(ApiResponse<AnalyticsDashboardDTO>), (int)HttpStatusCode.OK)]
         public async Task<IActionResult> GetAnalyticsDashboard([FromQuery] int days = 30)
@@ -180,7 +180,7 @@ namespace Team5Hackathon.API.Controllers
             }
         }
 
-        [Authorize]
+        //[Authorize]
         [HttpGet("dashboard/client")]
         [ProducesResponseType(typeof(ApiResponse<ClientDashboardDTO>), (int)HttpStatusCode.OK)]
         public async Task<IActionResult> GetClientDashboard()

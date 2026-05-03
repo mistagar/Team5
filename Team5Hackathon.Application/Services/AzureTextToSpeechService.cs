@@ -1,7 +1,7 @@
-using Microsoft.CognitiveServices.Speech;
-using Microsoft.CognitiveServices.Speech.Audio;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using System.Net.Http.Headers;
+using System.Text;
 using Team5Hackathon.Application.DTOs.AI;
 
 namespace Team5Hackathon.Application.Services;
@@ -10,14 +10,17 @@ public sealed class AzureTextToSpeechService : ITextToSpeechService
 {
     private const string DefaultVoice = "en-NG-EzinneNeural";
 
+    private readonly HttpClient _httpClient;
     private readonly string _speechKey;
     private readonly string _speechRegion;
     private readonly ILogger<AzureTextToSpeechService> _logger;
 
     public AzureTextToSpeechService(
+        HttpClient httpClient,
         IConfiguration configuration,
         ILogger<AzureTextToSpeechService> logger)
     {
+        _httpClient = httpClient;
         _speechKey = configuration["AzureSpeech:Key"]
             ?? throw new InvalidOperationException("AzureSpeech:Key is required.");
         _speechRegion = configuration["AzureSpeech:Region"]
@@ -29,36 +32,55 @@ public sealed class AzureTextToSpeechService : ITextToSpeechService
         TextToSpeechRequest request,
         CancellationToken cancellationToken = default)
     {
-        var speechConfig = SpeechConfig.FromSubscription(_speechKey, _speechRegion);
-        speechConfig.SetSpeechSynthesisOutputFormat(SpeechSynthesisOutputFormat.Audio16Khz32KBitRateMonoMp3);
-        speechConfig.SpeechSynthesisVoiceName = request.VoiceName ?? DefaultVoice;
-
-        // Use in-memory stream output
-        using var audioStream = AudioOutputStream.CreatePullStream();
-        using var audioConfig = AudioConfig.FromStreamOutput(audioStream);
-
-        using var synthesizer = new SpeechSynthesizer(speechConfig, audioConfig);
+        var voiceName = request.VoiceName ?? DefaultVoice;
 
         _logger.LogInformation(
             "Synthesising speech with voice '{Voice}', text length {Length}.",
-            speechConfig.SpeechSynthesisVoiceName,
+            voiceName,
             request.Text.Length);
 
-        var result = await synthesizer.SpeakTextAsync(request.Text);
+        var ssml = BuildSsml(request.Text, voiceName);
 
-        if (result.Reason == ResultReason.Canceled)
+        var url = $"https://{_speechRegion}.tts.speech.microsoft.com/cognitiveservices/v1";
+
+        using var httpRequest = new HttpRequestMessage(HttpMethod.Post, url);
+        httpRequest.Headers.Add("Ocp-Apim-Subscription-Key", _speechKey);
+        httpRequest.Headers.Add("User-Agent", "Team5Hackathon");
+        httpRequest.Headers.Add("X-Microsoft-OutputFormat", "audio-16khz-32kbitrate-mono-mp3");
+        httpRequest.Content = new StringContent(ssml, Encoding.UTF8, "application/ssml+xml");
+
+        var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
+
+        if (!response.IsSuccessStatusCode)
         {
-            var details = SpeechSynthesisCancellationDetails.FromResult(result);
+            var error = await response.Content.ReadAsStringAsync(cancellationToken);
             _logger.LogError(
-                "TTS cancelled. Reason: {Reason}. Error: {Error}",
-                details.Reason,
-                details.ErrorDetails);
-            throw new InvalidOperationException($"TTS cancelled: {details.ErrorDetails}");
+                "TTS REST API failed. Status: {Status}. Body: {Body}",
+                response.StatusCode, error);
+            throw new InvalidOperationException(
+                $"TTS REST API returned {(int)response.StatusCode}: {error}");
         }
 
-        var audioBytes = result.AudioData;
-        var base64 = Convert.ToBase64String(audioBytes);
+        var audioBytes = await response.Content.ReadAsByteArrayAsync(cancellationToken);
+        return new TextToSpeechResponse { AudioBase64 = Convert.ToBase64String(audioBytes) };
+    }
 
-        return new TextToSpeechResponse { AudioBase64 = base64 };
+    private static string BuildSsml(string text, string voiceName)
+    {
+        // Escape XML special characters in the text
+        var escaped = text
+            .Replace("&", "&amp;")
+            .Replace("<", "&lt;")
+            .Replace(">", "&gt;")
+            .Replace("\"", "&quot;")
+            .Replace("'", "&apos;");
+
+        return $"""
+            <speak version='1.0' xml:lang='en-US'>
+              <voice name='{voiceName}'>
+                {escaped}
+              </voice>
+            </speak>
+            """;
     }
 }
