@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Team5Hackathon.API.Controllers;
 using Team5Hackathon.API.DTOs;
 using Team5Hackathon.Application.DTOs.Streaming;
+using Team5Hackathon.Application.Services;
 using Team5Hackathon.Tests.Fakes;
 
 namespace Team5Hackathon.Tests.Controllers;
@@ -13,7 +14,8 @@ public sealed class AudioStreamControllerTests
     public async Task IngestAudioChunk_ReturnsAccepted_ForValidRequest()
     {
         var service = new StubAudioStreamIngestionService();
-        var controller = new AudioStreamController(service)
+        var recordingService = new CallRecordingService();
+        var controller = new AudioStreamController(service, recordingService)
         {
             ControllerContext = new ControllerContext
             {
@@ -39,7 +41,8 @@ public sealed class AudioStreamControllerTests
     public async Task IngestAudioChunk_ReturnsBadRequest_ForInvalidChunk()
     {
         var service = new StubAudioStreamIngestionService { ThrowInvalidChunk = true };
-        var controller = new AudioStreamController(service)
+        var recordingService = new CallRecordingService();
+        var controller = new AudioStreamController(service, recordingService)
         {
             ControllerContext = new ControllerContext
             {

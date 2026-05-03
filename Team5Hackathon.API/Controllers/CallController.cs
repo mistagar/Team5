@@ -13,10 +13,12 @@ namespace Team5Hackathon.API.Controllers
     public class CallController : ControllerBase
     {
         private readonly ICallService _callService;
+        private readonly ICallRecordingService _callRecordingService;
 
-        public CallController(ICallService callService)
+        public CallController(ICallService callService, ICallRecordingService callRecordingService)
         {
             _callService = callService;
+            _callRecordingService = callRecordingService;
         }
 
         [HttpPost("start")]
@@ -27,6 +29,9 @@ namespace Team5Hackathon.API.Controllers
             {
                 var call = await _callService.StartCallAsync(dto);
                 if (call == null) return BadRequest(ApiResponse<string>.FailResponse("Failed to start call"));
+
+                await _callRecordingService.StartRecording(new StartRecordingDTO { CallId = call.Id });
+
                 return Ok(ApiResponse<CallDTO>.SuccessResponse(call, "Call started successfully"));
             }
             catch (Exception ex)
@@ -43,7 +48,10 @@ namespace Team5Hackathon.API.Controllers
             {
                 var success = await _callService.EndCallAsync(dto);
                 if (!success) return BadRequest(ApiResponse<string>.FailResponse("Failed to end call"));
-                return Ok(ApiResponse<string>.SuccessResponse("Call ended successfully"));
+
+                var recording = await _callRecordingService.StopRecording(dto.CallId);
+
+                return File(recording, "audio/webm", $"call_{dto.CallId}.webm");
             }
             catch (Exception ex)
             {

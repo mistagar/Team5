@@ -11,10 +11,12 @@ namespace Team5Hackathon.API.Controllers;
 public sealed class AudioStreamController : ControllerBase
 {
     private readonly IAudioStreamIngestionService _audioStreamIngestionService;
+    private readonly CallRecordingService _callRecordingService;
 
-    public AudioStreamController(IAudioStreamIngestionService audioStreamIngestionService)
+    public AudioStreamController(IAudioStreamIngestionService audioStreamIngestionService, CallRecordingService callRecordingService)
     {
         _audioStreamIngestionService = audioStreamIngestionService;
+        _callRecordingService = callRecordingService;
     }
 
     [HttpPost("audio-chunk")]
@@ -29,6 +31,12 @@ public sealed class AudioStreamController : ControllerBase
                 request,
                 correlationId,
                 cancellationToken);
+
+            if (!string.IsNullOrEmpty(request.ChunkBase64))
+            {
+                var chunkBytes = Convert.FromBase64String(request.ChunkBase64);
+                _callRecordingService.AddAudioChunk(request.CallId, chunkBytes);
+            }
 
             return Accepted(ApiResponse<AudioChunkIngestionResponse>.SuccessResponse(response));
         }
