@@ -29,7 +29,16 @@ public sealed class AzureTextToSpeechService : ITextToSpeechService
         TextToSpeechRequest request,
         CancellationToken cancellationToken = default)
     {
-        var speechConfig = SpeechConfig.FromSubscription(_speechKey, _speechRegion);
+        SpeechConfig speechConfig;
+        try
+        {
+            speechConfig = SpeechConfig.FromSubscription(_speechKey, _speechRegion);
+        }
+        catch (TypeInitializationException ex) when (ex.InnerException is DllNotFoundException)
+        {
+            _logger.LogError(ex, "Failed to initialize Azure Speech SDK. Native libraries may be missing on the deployment environment.");
+            throw new InvalidOperationException("Azure Text-to-Speech service is not available due to missing native dependencies. Please ensure the deployment environment (e.g., Azure App Service) has the required libraries installed. For Linux deployments, install packages like libssl-dev, libgomp1, etc.", ex);
+        }
         speechConfig.SetSpeechSynthesisOutputFormat(SpeechSynthesisOutputFormat.Audio16Khz32KBitRateMonoMp3);
         speechConfig.SpeechSynthesisVoiceName = request.VoiceName ?? DefaultVoice;
 

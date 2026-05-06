@@ -29,9 +29,24 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ITextToSpeechService, AzureTextToSpeechService>();
         services.AddScoped<IAudioStreamIngestionService, AudioStreamIngestionService>();
         services.AddHttpClient<ITranscriptionService, WhisperTranscriptionService>();
+        services.AddScoped<ICallRecordingService, CallRecordingService>();
         services.AddSingleton<IAudioStreamQueue, InMemoryAudioStreamQueue>();
         services.AddSingleton(new InMemoryAudioChunkBuffer(maxChunksPerCall: 25));
         services.AddHostedService<AudioStreamProcessingWorker>();
+        services.AddMemoryCache();
+        services.AddScoped<IPredictionRepository, PredictionRepository>();
+        services.AddScoped<IPredictionQueryService, PredictionQueryService>();
+        services.AddScoped<IDecisionEngineService, DecisionEngineService>();
+        services.AddScoped<IOfferRepository, OfferRepository>();
+        services.AddScoped<IOfferManagementService, OfferManagementService>();
+        services.AddScoped<IChannelRepository, ChannelRepository>();
+        services.AddScoped<IChannelManagementService, ChannelManagementService>();
+        services.AddScoped<IExecutionPolicyRepository, ExecutionPolicyRepository>();
+        services.AddScoped<IExecutionPolicyService, ExecutionPolicyService>();
+        services.AddScoped<IInterventionQueueRepository, InterventionQueueRepository>();
+        services.AddScoped<ISupervisorApprovalService, SupervisorApprovalService>();
+        services.AddScoped<IPredictionDataRepository, PredictionDataRepository>();
+        services.AddScoped<IPredictionDataService, PredictionDataService>();
 
         return services;
     }

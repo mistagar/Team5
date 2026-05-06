@@ -200,5 +200,90 @@ namespace Team5Hackathon.Application.Services
 
             return rawOutput;
         }
+
+        public async Task<ComplaintAnalysisResult> ProcessTextToTextAsync(
+            string inputText,
+            CancellationToken cancellationToken = default)
+        {
+            const string TextToTextSystemPrompt = """
+                You are a Nigerian telecom customer support assistant.
+
+                Return output in JSON:
+                {
+                  "summary": "...",
+                  "category": "...",
+                  "sentiment": "...",
+                  "response": "...",
+                  "english_response": "..."
+                }
+
+                Instructions:
+                - Detect language (Pidgin or English)
+                - For "response": Respond in same language/style as the input
+                - For "english_response": Always respond in formal, professional English
+                - Be polite and helpful
+                - Keep responses short and professional
+                - Categories: network | data | billing | call | sim | other
+                - Sentiments: positive | neutral | frustrated | angry
+
+                If input is in Pidgin, "response" should be in Pidgin and "english_response" should be formal English.
+                If input is in English, "response" can be in simple English and "english_response" should be formal English.
+                """;
+
+            var chatOptions = new ChatCompletionsOptions
+            {
+                DeploymentName = _deploymentName,
+                Temperature = 0,
+                Messages =
+                {
+                    new ChatRequestSystemMessage(TextToTextSystemPrompt),
+                    new ChatRequestUserMessage(inputText)
+                }
+            };
+
+            var response = await _openAIClient.GetChatCompletionsAsync(chatOptions, cancellationToken);
+            var rawOutput = response.Value.Choices[0].Message.Content;
+
+            _logger.LogDebug("ProcessTextToText raw output: {Output}", rawOutput);
+
+            try
+            {
+                var result = JsonSerializer.Deserialize<ComplaintAnalysisResult>(rawOutput,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                
+                if (result is not null)
+                {
+                    result.TranscribedText = inputText;
+                    
+                    // Ensure we have both responses
+                    if (string.IsNullOrEmpty(result.EnglishResponse) && !string.IsNullOrEmpty(result.Response))
+                    {
+                        // If english_response is missing, generate it separately
+                        result.EnglishResponse = await GenerateEnglishResponseAsync(inputText, cancellationToken);
+                    }
+                    
+                    return result;
+                }
+                
+                return new ComplaintAnalysisResult 
+                { 
+                    TranscribedText = inputText, 
+                    Summary = rawOutput,
+                    Response = rawOutput,
+                    EnglishResponse = rawOutput
+                };
+            }
+            catch (JsonException ex)
+            {
+                _logger.LogWarning(ex, "Could not parse text-to-text JSON. Returning raw text as summary.");
+                return new ComplaintAnalysisResult 
+                { 
+                    TranscribedText = inputText, 
+                    Summary = rawOutput,
+                    Response = rawOutput,
+                    EnglishResponse = rawOutput
+                };
+            }
+        }
     }
 }

@@ -28,52 +28,74 @@ public sealed class WhisperTranscriptionService : ITranscriptionService
         string? contentType = null,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(_options.EndpointUrl)
-            || string.IsNullOrWhiteSpace(_options.ApiKey))
-        {
-            _logger.LogWarning("Whisper transcription is not configured. Endpoint or API key is missing.");
-            return null;
-        }
-
-        using var request = new HttpRequestMessage(HttpMethod.Post, _options.EndpointUrl);
-        request.Headers.TryAddWithoutValidation(_options.ApiKeyHeaderName, _options.ApiKey);
-
-        using var form = new MultipartFormDataContent();
-        using var audioContent = new ByteArrayContent(audioBytes);
-        audioContent.Headers.ContentType = new MediaTypeHeaderValue(contentType ?? _options.AudioContentType);
-        form.Add(audioContent, _options.AudioFormFieldName, fileName);
-        request.Content = form;
-
-        using var response = await _httpClient.SendAsync(request, cancellationToken);
-        var rawBody = await response.Content.ReadAsStringAsync(cancellationToken);
-
-        if (!response.IsSuccessStatusCode)
-        {
-            _logger.LogWarning(
-                "Whisper transcription failed with status code {StatusCode}. Body: {Body}",
-                (int)response.StatusCode,
-                rawBody);
-            return null;
-        }
-
-        if (string.IsNullOrWhiteSpace(rawBody))
-        {
-            return null;
-        }
-
         try
         {
-            using var document = JsonDocument.Parse(rawBody);
-            if (document.RootElement.TryGetProperty("text", out var textElement))
-            {
-                return textElement.GetString();
-            }
-        }
-        catch (JsonException)
-        {
-            // Some providers may return plain text; keep graceful fallback.
-        }
+            _logger.LogInformation("Starting transcription for file: {FileName}, Size: {Size} bytes", fileName, audioBytes.Length);
 
-        return rawBody;
+            if (string.IsNullOrWhiteSpace(_options.EndpointUrl)
+                || string.IsNullOrWhiteSpace(_options.ApiKey))
+            {
+                _logger.LogError("Whisper transcription is not configured. EndpointUrl: '{EndpointUrl}', ApiKey exists: {ApiKeyExists}", 
+                    _options.EndpointUrl, !string.IsNullOrWhiteSpace(_options.ApiKey));
+                throw new InvalidOperationException("Whisper transcription service is not properly configured. Missing endpoint URL or API key.");
+            }
+
+            using var request = new HttpRequestMessage(HttpMethod.Post, _options.EndpointUrl);
+            request.Headers.TryAddWithoutValidation(_options.ApiKeyHeaderName, _options.ApiKey);
+
+            using var form = new MultipartFormDataContent();
+            using var audioContent = new ByteArrayContent(audioBytes);
+            audioContent.Headers.ContentType = new MediaTypeHeaderValue(contentType ?? _options.AudioContentType);
+            form.Add(audioContent, _options.AudioFormFieldName, fileName);
+            request.Content = form;
+
+            _logger.LogDebug("Sending transcription request to: {EndpointUrl}", _options.EndpointUrl);
+
+            using var response = await _httpClient.SendAsync(request, cancellationToken);
+            var rawBody = await response.Content.ReadAsStringAsync(cancellationToken);
+
+            _logger.LogDebug("Transcription response - Status: {StatusCode}, Body length: {BodyLength}", 
+                response.StatusCode, rawBody?.Length ?? 0);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogError("Whisper transcription failed with status code {StatusCode}. Response: {Response}", 
+                    (int)response.StatusCode, rawBody);
+                throw new HttpRequestException($"Transcription service returned {response.StatusCode}: {rawBody}");
+            }
+
+            if (string.IsNullOrWhiteSpace(rawBody))
+            {
+                _logger.LogWarning("Transcription service returned empty response");
+                return null;
+            }
+
+            try
+            {
+                using var document = JsonDocument.Parse(rawBody);
+                if (document.RootElement.TryGetProperty("text", out var textElement))
+                {
+                    var transcriptText = textElement.GetString();
+                    _logger.LogInformation("Transcription completed successfully. Text length: {Length}", transcriptText?.Length ?? 0);
+                    return transcriptText;
+                }
+                else
+                {
+                    _logger.LogWarning("Transcription response does not contain 'text' property. Raw response: {Response}", rawBody);
+                }
+            }
+            catch (JsonException ex)
+            {
+                _logger.LogWarning(ex, "Could not parse transcription response as JSON. Treating as plain text. Response: {Response}", rawBody);
+                // Some providers may return plain text; keep graceful fallback.
+            }
+
+            return rawBody;
+        }
+        catch (Exception ex) when (!(ex is HttpRequestException || ex is InvalidOperationException))
+        {
+            _logger.LogError(ex, "Unexpected error during transcription");
+            throw new InvalidOperationException($"Transcription service encountered an unexpected error: {ex.Message}", ex);
+        }
     }
 }

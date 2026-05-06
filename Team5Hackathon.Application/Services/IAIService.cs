@@ -32,5 +32,13 @@ namespace Team5Hackathon.Application.Services
         Task<string> GenerateEnglishResponseAsync(
             string transcribedText,
             CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Analyzes text input and returns structured JSON response with summary, category, sentiment, and response.
+        /// This is the direct text-to-text processing endpoint.
+        /// </summary>
+        Task<ComplaintAnalysisResult> ProcessTextToTextAsync(
+            string inputText,
+            CancellationToken cancellationToken = default);
     }
 }

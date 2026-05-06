@@ -23,6 +23,14 @@ namespace Team5Hackathon.Infrastructure.Persistence
         public DbSet<TranscriptSegment> TranscriptSegments { get; set; } = null!;
         public DbSet<FollowUpMessage> FollowUpMessages { get; set; } = null!;
         public DbSet<UserRequest> UserRequests { get; set; } = null!;
+        public DbSet<CustomerRiskProfile> CustomerRiskProfiles { get; set; } = null!;
+        public DbSet<OfferConfiguration> OfferConfigurations { get; set; } = null!;
+        public DbSet<OfferEligibilityRule> OfferEligibilityRules { get; set; } = null!;
+        public DbSet<ChannelConfiguration> ChannelConfigurations { get; set; } = null!;
+        public DbSet<ExecutionPolicy> ExecutionPolicies { get; set; } = null!;
+        public DbSet<InterventionQueue> InterventionQueues { get; set; } = null!;
+        //public DbSet<Prediction> predictions { get; set; } = null!;
+        public DbSet<Prediction> Predictions { get; set; } = null!;
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
@@ -35,6 +43,8 @@ namespace Team5Hackathon.Infrastructure.Persistence
                     .IsRequired()
                     .OnDelete(DeleteBehavior.Cascade);
             });
+
+            builder.Entity<Prediction>().ToTable("predictions", "dbo");
 
             // Rename Identity tables here:
             builder.Entity<ApplicationUser>().ToTable("Users");
@@ -106,6 +116,83 @@ namespace Team5Hackathon.Infrastructure.Persistence
                 entity.Property(ur => ur.Sentiment).HasMaxLength(50);
                 // CallId is optional — null for non-call requests
                 entity.HasIndex(ur => ur.CallId);
+            });
+
+            builder.Entity<CustomerRiskProfile>(entity =>
+            {
+                entity.HasKey(c => c.CustomerId);
+                entity.Property(c => c.CustomerId).HasMaxLength(50).IsRequired();
+                entity.Property(c => c.ComplaintText).HasMaxLength(1000);
+                entity.Property(c => c.CustomerType).HasMaxLength(50).IsRequired();
+                entity.HasIndex(c => c.ChurnRiskScore);
+                entity.HasIndex(c => c.CustomerType);
+            });
+
+            builder.Entity<OfferConfiguration>(entity =>
+            {
+                entity.HasKey(o => o.Id);
+                entity.Property(o => o.Name).HasMaxLength(200).IsRequired();
+                entity.Property(o => o.Description).HasMaxLength(1000);
+                entity.Property(o => o.OfferType).HasMaxLength(50);
+                entity.Property(o => o.Terms).HasMaxLength(2000);
+                entity.Property(o => o.Value).HasPrecision(18, 2);  // Added precision specification
+                entity.HasIndex(o => o.IsActive);
+                entity.HasIndex(o => o.ValidityStart);
+                entity.HasIndex(o => o.ValidityEnd);
+            });
+
+            builder.Entity<OfferEligibilityRule>(entity =>
+            {
+                entity.HasKey(r => r.Id);
+                entity.HasOne(r => r.OfferConfiguration)
+                    .WithMany(o => o.EligibilityRules)
+                    .HasForeignKey(r => r.OfferConfigurationId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                entity.Property(r => r.ChurnClassification).HasMaxLength(50);
+                entity.Property(r => r.ComplaintText).HasMaxLength(500);
+            });
+
+            builder.Entity<ChannelConfiguration>(entity =>
+            {
+                entity.HasKey(c => c.Id);
+                entity.Property(c => c.ChannelType).HasMaxLength(50).IsRequired();
+                entity.Property(c => c.PreferredChurnTypes).HasMaxLength(500);
+                entity.HasIndex(c => c.ChannelType).IsUnique();
+                entity.HasIndex(c => c.IsEnabled);
+            });
+
+            builder.Entity<ExecutionPolicy>(entity =>
+            {
+                entity.HasKey(p => p.Id);
+                entity.Property(p => p.Name).HasMaxLength(200).IsRequired();
+                entity.Property(p => p.Mode).HasMaxLength(50).IsRequired();
+                entity.Property(p => p.ApplicableSegments).HasMaxLength(500);
+                entity.HasIndex(p => p.IsActive);
+            });
+
+            builder.Entity<InterventionQueue>(entity =>
+            {
+                entity.HasKey(q => q.Id);
+                entity.Property(q => q.CustomerId).HasMaxLength(50).IsRequired();
+                entity.Property(q => q.RecommendedOffer).HasMaxLength(200).IsRequired();
+                entity.Property(q => q.RecommendedChannel).HasMaxLength(50).IsRequired();
+                entity.Property(q => q.Status).HasMaxLength(50).IsRequired();
+                entity.Property(q => q.ApprovedOffer).HasMaxLength(200);
+                entity.Property(q => q.ApprovedChannel).HasMaxLength(50);
+                entity.Property(q => q.ApprovalNotes).HasMaxLength(1000);
+                entity.HasIndex(q => q.Status);
+                entity.HasIndex(q => q.CustomerId);
+            });
+
+            builder.Entity<Prediction>(entity =>
+            {
+                entity.ToTable("predictions");
+                entity.HasKey(p => p.Id);
+                entity.Property(p => p.ComplaintText).HasMaxLength(1000);
+                entity.Property(p => p.CustomerType).HasMaxLength(50);
+                entity.HasIndex(p => p.CustomerId);
+                entity.HasIndex(p => p.ChurnRiskScore);
+                entity.HasIndex(p => p.CustomerType);
             });
 
             var adminRoleId = Guid.Parse("c4a3298c-6198-4d12-bd1a-56d1d1ce0aa7");

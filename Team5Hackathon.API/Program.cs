@@ -73,10 +73,6 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddSingleton<CallRecordingService>();
-builder.Services.AddScoped<ICallRecordingService, CallRecordingService>();
-
-
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -134,3 +130,5 @@ app.MapControllers();
 app.MapGet("/health", () => Results.Ok(new { Status = "Healthy" })).AllowAnonymous();
 
 app.Run();
+
+public partial class Program { }

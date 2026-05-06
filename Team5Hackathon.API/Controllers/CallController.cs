@@ -169,7 +169,7 @@ namespace Team5Hackathon.API.Controllers
             }
         }
 
-        [Authorize(Roles = "Admin,Supervisor")]
+       // [Authorize(Roles = "Admin,Supervisor")]
         [HttpGet("dashboard/analytics")]
         [ProducesResponseType(typeof(ApiResponse<AnalyticsDashboardDTO>), (int)HttpStatusCode.OK)]
         public async Task<IActionResult> GetAnalyticsDashboard([FromQuery] int days = 30)

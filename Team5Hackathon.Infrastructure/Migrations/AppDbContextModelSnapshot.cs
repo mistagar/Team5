@@ -242,6 +242,46 @@ namespace Team5Hackathon.Infrastructure.Migrations
                     b.ToTable("Calls");
                 });
 
+            modelBuilder.Entity("Team5Hackathon.Domain.Entities.ChannelConfiguration", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ChannelType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("CooldownMinutes")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("PreferredChurnTypes")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("RetryCount")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChannelType")
+                        .IsUnique();
+
+                    b.HasIndex("IsEnabled");
+
+                    b.ToTable("ChannelConfigurations");
+                });
+
             modelBuilder.Entity("Team5Hackathon.Domain.Entities.Client", b =>
                 {
                     b.Property<string>("ClientId")
@@ -288,6 +328,96 @@ namespace Team5Hackathon.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Team5Hackathon.Domain.Entities.CustomerRiskProfile", b =>
+                {
+                    b.Property<string>("CustomerId")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<double>("AvgDataUsage")
+                        .HasColumnType("float");
+
+                    b.Property<bool>("Churn")
+                        .HasColumnType("bit");
+
+                    b.Property<double>("ChurnRiskScore")
+                        .HasColumnType("float");
+
+                    b.Property<string>("ComplaintText")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("CustomerType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<double>("EngagementScore")
+                        .HasColumnType("float");
+
+                    b.Property<bool>("HasComplaint")
+                        .HasColumnType("bit");
+
+                    b.Property<double>("NetworkQuality")
+                        .HasColumnType("float");
+
+                    b.Property<double>("RechargeChangePct")
+                        .HasColumnType("float");
+
+                    b.Property<int>("RechargeFreq")
+                        .HasColumnType("int");
+
+                    b.Property<double>("UsageChangePct")
+                        .HasColumnType("float");
+
+                    b.HasKey("CustomerId");
+
+                    b.HasIndex("ChurnRiskScore");
+
+                    b.HasIndex("CustomerType");
+
+                    b.ToTable("CustomerRiskProfiles");
+                });
+
+            modelBuilder.Entity("Team5Hackathon.Domain.Entities.ExecutionPolicy", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ApplicableSegments")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Mode")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<double>("RiskThreshold")
+                        .HasColumnType("float");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IsActive");
+
+                    b.ToTable("ExecutionPolicies");
+                });
+
             modelBuilder.Entity("Team5Hackathon.Domain.Entities.FollowUpMessage", b =>
                 {
                     b.Property<Guid>("Id")
@@ -322,6 +452,241 @@ namespace Team5Hackathon.Infrastructure.Migrations
                     b.HasIndex("CallId");
 
                     b.ToTable("FollowUpMessages");
+                });
+
+            modelBuilder.Entity("Team5Hackathon.Domain.Entities.InterventionQueue", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ApprovalNotes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime?>("ApprovedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("ApprovedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ApprovedChannel")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("ApprovedOffer")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CustomerId")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime?>("ExecutedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("RecommendedChannel")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("RecommendedOffer")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CustomerId");
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("InterventionQueues");
+                });
+
+            modelBuilder.Entity("Team5Hackathon.Domain.Entities.OfferConfiguration", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("OfferType")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("Priority")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Terms")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("ValidityEnd")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("ValidityStart")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("Value")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IsActive");
+
+                    b.HasIndex("ValidityEnd");
+
+                    b.HasIndex("ValidityStart");
+
+                    b.ToTable("OfferConfigurations");
+                });
+
+            modelBuilder.Entity("Team5Hackathon.Domain.Entities.OfferEligibilityRule", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ChurnClassification")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("ComplaintText")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool?>("HasComplaint")
+                        .HasColumnType("bit");
+
+                    b.Property<double?>("MaxChurnRisk")
+                        .HasColumnType("float");
+
+                    b.Property<double?>("MaxEngagement")
+                        .HasColumnType("float");
+
+                    b.Property<double?>("MaxNetworkQuality")
+                        .HasColumnType("float");
+
+                    b.Property<double?>("MinChurnRisk")
+                        .HasColumnType("float");
+
+                    b.Property<double?>("MinEngagement")
+                        .HasColumnType("float");
+
+                    b.Property<double?>("MinNetworkQuality")
+                        .HasColumnType("float");
+
+                    b.Property<Guid>("OfferConfigurationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OfferConfigurationId");
+
+                    b.ToTable("OfferEligibilityRules");
+                });
+
+            modelBuilder.Entity("Team5Hackathon.Domain.Entities.Prediction", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<double?>("AvgDataUsage")
+                        .HasColumnType("float")
+                        .HasColumnName("avg_data_usage");
+
+                    b.Property<bool?>("Churn")
+                        .HasColumnType("bit")
+                        .HasColumnName("churn");
+
+                    b.Property<double?>("ChurnRiskScore")
+                        .HasColumnType("float")
+                        .HasColumnName("churn_risk_score");
+
+                    b.Property<string>("ComplaintText")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)")
+                        .HasColumnName("complaint_text");
+
+                    b.Property<int?>("CustomerId")
+                        .HasColumnType("int")
+                        .HasColumnName("customer_id");
+
+                    b.Property<string>("CustomerType")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("customer_type");
+
+                    b.Property<double?>("EngagementScore")
+                        .HasColumnType("float")
+                        .HasColumnName("engagement_score");
+
+                    b.Property<bool?>("HasComplaint")
+                        .HasColumnType("bit")
+                        .HasColumnName("has_complaint");
+
+                    b.Property<double?>("NetworkQuality")
+                        .HasColumnType("float")
+                        .HasColumnName("network_quality");
+
+                    b.Property<double?>("RechargeChangePct")
+                        .HasColumnType("float")
+                        .HasColumnName("recharge_change_pct");
+
+                    b.Property<int?>("RechargeFreq")
+                        .HasColumnType("int")
+                        .HasColumnName("recharge_freq");
+
+                    b.Property<DateTime?>("Timestamp")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("timestamp");
+
+                    b.Property<double?>("UsageChangePct")
+                        .HasColumnType("float")
+                        .HasColumnName("usage_change_pct");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChurnRiskScore");
+
+                    b.HasIndex("CustomerId");
+
+                    b.HasIndex("CustomerType");
+
+                    b.ToTable("predictions", (string)null);
                 });
 
             modelBuilder.Entity("Team5Hackathon.Domain.Entities.RefreshToken", b =>
@@ -702,6 +1067,17 @@ namespace Team5Hackathon.Infrastructure.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Team5Hackathon.Domain.Entities.OfferEligibilityRule", b =>
+                {
+                    b.HasOne("Team5Hackathon.Domain.Entities.OfferConfiguration", "OfferConfiguration")
+                        .WithMany("EligibilityRules")
+                        .HasForeignKey("OfferConfigurationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("OfferConfiguration");
+                });
+
             modelBuilder.Entity("Team5Hackathon.Domain.Entities.RefreshToken", b =>
                 {
                     b.HasOne("Team5Hackathon.Domain.Entities.Client", "Client")
@@ -740,6 +1116,11 @@ namespace Team5Hackathon.Infrastructure.Migrations
             modelBuilder.Entity("Team5Hackathon.Domain.Entities.Client", b =>
                 {
                     b.Navigation("RefreshTokens");
+                });
+
+            modelBuilder.Entity("Team5Hackathon.Domain.Entities.OfferConfiguration", b =>
+                {
+                    b.Navigation("EligibilityRules");
                 });
 
             modelBuilder.Entity("Team5Hackathon.Domain.Entities.User", b =>
