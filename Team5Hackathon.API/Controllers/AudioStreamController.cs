@@ -11,9 +11,9 @@ namespace Team5Hackathon.API.Controllers;
 public sealed class AudioStreamController : ControllerBase
 {
     private readonly IAudioStreamIngestionService _audioStreamIngestionService;
-    private readonly CallRecordingService _callRecordingService;
+    private readonly ICallRecordingService _callRecordingService;
 
-    public AudioStreamController(IAudioStreamIngestionService audioStreamIngestionService, CallRecordingService callRecordingService)
+    public AudioStreamController(IAudioStreamIngestionService audioStreamIngestionService, ICallRecordingService callRecordingService)
     {
         _audioStreamIngestionService = audioStreamIngestionService;
         _callRecordingService = callRecordingService;
@@ -27,10 +27,13 @@ public sealed class AudioStreamController : ControllerBase
         try
         {
             var correlationId = HttpContext.TraceIdentifier;
+
+            // Use CancellationToken.None for the queue write: the request body is already
+            // fully read at this point, so cancelling here would silently drop a valid chunk.
             var response = await _audioStreamIngestionService.IngestChunkAsync(
                 request,
                 correlationId,
-                cancellationToken);
+                CancellationToken.None);
 
             if (!string.IsNullOrEmpty(request.ChunkBase64))
             {
@@ -43,6 +46,11 @@ public sealed class AudioStreamController : ControllerBase
         catch (InvalidAudioChunkException ex)
         {
             return BadRequest(ApiResponse<AudioChunkIngestionResponse>.FailResponse(ex.Message));
+        }
+        catch (OperationCanceledException)
+        {
+            // Client disconnected before the body was fully read — not an error.
+            return StatusCode(StatusCodes.Status499ClientClosedRequest);
         }
     }
 }

@@ -1,24 +1,37 @@
-using Microsoft.CognitiveServices.Speech;
-using Microsoft.CognitiveServices.Speech.Audio;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using System.Net.Http.Headers;
+using System.Security;
+using System.Text;
 using Team5Hackathon.Application.DTOs.AI;
 
 namespace Team5Hackathon.Application.Services;
 
 public sealed class AzureTextToSpeechService : ITextToSpeechService
 {
-    private const string DefaultVoice = "en-NG-EzinneNeural";
+    private const string DefaultVoice  = "en-NG-EzinneNeural";
+    private const string OutputFormat  = "audio-16khz-128kbitrate-mono-mp3";
 
+    // Derives the xml:lang locale from the voice name (e.g. "en-NG-EzinneNeural" ? "en-NG").
+    // Falls back to "en-US" for unrecognised names.
+    private static string VoiceToLang(string voiceName)
+    {
+        var parts = voiceName.Split('-');
+        return parts.Length >= 2 ? $"{parts[0]}-{parts[1]}" : "en-US";
+    }
+
+    private readonly HttpClient _httpClient;
     private readonly string _speechKey;
     private readonly string _speechRegion;
     private readonly ILogger<AzureTextToSpeechService> _logger;
 
     public AzureTextToSpeechService(
+        HttpClient httpClient,
         IConfiguration configuration,
         ILogger<AzureTextToSpeechService> logger)
     {
-        _speechKey = configuration["AzureSpeech:Key"]
+        _httpClient = httpClient;
+        _speechKey   = configuration["AzureSpeech:Key"]
             ?? throw new InvalidOperationException("AzureSpeech:Key is required.");
         _speechRegion = configuration["AzureSpeech:Region"]
             ?? throw new InvalidOperationException("AzureSpeech:Region is required.");
@@ -29,45 +42,44 @@ public sealed class AzureTextToSpeechService : ITextToSpeechService
         TextToSpeechRequest request,
         CancellationToken cancellationToken = default)
     {
-        SpeechConfig speechConfig;
-        try
-        {
-            speechConfig = SpeechConfig.FromSubscription(_speechKey, _speechRegion);
-        }
-        catch (TypeInitializationException ex) when (ex.InnerException is DllNotFoundException)
-        {
-            _logger.LogError(ex, "Failed to initialize Azure Speech SDK. Native libraries may be missing on the deployment environment.");
-            throw new InvalidOperationException("Azure Text-to-Speech service is not available due to missing native dependencies. Please ensure the deployment environment (e.g., Azure App Service) has the required libraries installed. For Linux deployments, install packages like libssl-dev, libgomp1, etc.", ex);
-        }
-        speechConfig.SetSpeechSynthesisOutputFormat(SpeechSynthesisOutputFormat.Audio16Khz32KBitRateMonoMp3);
-        speechConfig.SpeechSynthesisVoiceName = request.VoiceName ?? DefaultVoice;
+        var voiceName = string.IsNullOrWhiteSpace(request.VoiceName) ? DefaultVoice : request.VoiceName;
+        var lang      = VoiceToLang(voiceName);
 
-        // Use in-memory stream output
-        using var audioStream = AudioOutputStream.CreatePullStream();
-        using var audioConfig = AudioConfig.FromStreamOutput(audioStream);
+        var ssml = $"""
+            <speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='{lang}'>
+                <voice xml:lang='{lang}' xml:gender='Female' name='{voiceName}'>
+                    {SecurityElement.Escape(request.Text)}
+                </voice>
+            </speak>
+            """;
 
-        using var synthesizer = new SpeechSynthesizer(speechConfig, audioConfig);
+        var url = $"https://{_speechRegion}.tts.speech.microsoft.com/cognitiveservices/v1";
+
+        using var httpRequest = new HttpRequestMessage(HttpMethod.Post, url);
+        httpRequest.Headers.Add("Ocp-Apim-Subscription-Key", _speechKey);
+        httpRequest.Headers.Add("User-Agent", "Team5Hackathon");
+        // Required: tells Azure TTS which audio format to encode and return.
+        httpRequest.Headers.Add("X-Microsoft-OutputFormat", OutputFormat);
+
+        httpRequest.Content = new StringContent(ssml, Encoding.UTF8, "application/ssml+xml");
 
         _logger.LogInformation(
             "Synthesising speech with voice '{Voice}', text length {Length}.",
-            speechConfig.SpeechSynthesisVoiceName,
-            request.Text.Length);
+            voiceName, request.Text.Length);
 
-        var result = await synthesizer.SpeakTextAsync(request.Text);
+        var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
 
-        if (result.Reason == ResultReason.Canceled)
+        if (!response.IsSuccessStatusCode)
         {
-            var details = SpeechSynthesisCancellationDetails.FromResult(result);
+            var errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
             _logger.LogError(
-                "TTS cancelled. Reason: {Reason}. Error: {Error}",
-                details.Reason,
-                details.ErrorDetails);
-            throw new InvalidOperationException($"TTS cancelled: {details.ErrorDetails}");
+                "TTS request failed with status {StatusCode}: {Error}",
+                response.StatusCode, errorContent);
+            throw new InvalidOperationException(
+                $"TTS synthesis failed: {response.StatusCode} - {errorContent}");
         }
 
-        var audioBytes = result.AudioData;
-        var base64 = Convert.ToBase64String(audioBytes);
-
-        return new TextToSpeechResponse { AudioBase64 = base64 };
+        var audioBytes = await response.Content.ReadAsByteArrayAsync(cancellationToken);
+        return new TextToSpeechResponse { AudioBase64 = Convert.ToBase64String(audioBytes) };
     }
 }

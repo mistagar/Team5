@@ -67,5 +67,17 @@ namespace Team5Hackathon.Infrastructure.Repositories
 
             return (predictions, totalCount);
         }
+
+        public async Task<IEnumerable<Prediction>> GetPredictionsByChurnRiskAsync(double minRisk, bool? churn = null)
+        {
+            var query = _context.Predictions.Where(p => p.ChurnRiskScore >= minRisk);
+
+            if (churn.HasValue)
+            {
+                query = query.Where(p => p.Churn == churn.Value);
+            }
+
+            return await query.ToListAsync();
+        }
     }
 }

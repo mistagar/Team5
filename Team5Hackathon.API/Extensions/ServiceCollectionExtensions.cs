@@ -26,7 +26,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ICallRepository, CallRepository>();
         services.AddScoped<ICallService, CallService>();
         services.AddScoped<IAIService, AIService>();
-        services.AddScoped<ITextToSpeechService, AzureTextToSpeechService>();
+        services.AddHttpClient<ITextToSpeechService, AzureTextToSpeechService>();
         services.AddScoped<IAudioStreamIngestionService, AudioStreamIngestionService>();
         services.AddHttpClient<ITranscriptionService, WhisperTranscriptionService>();
         services.AddScoped<ICallRecordingService, CallRecordingService>();
@@ -47,6 +47,9 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ISupervisorApprovalService, SupervisorApprovalService>();
         services.AddScoped<IPredictionDataRepository, PredictionDataRepository>();
         services.AddScoped<IPredictionDataService, PredictionDataService>();
+        services.AddScoped<INotificationService, NotificationService>();
+        services.AddScoped<IChurnNotificationService, ChurnNotificationService>();
+        services.AddHostedService<ChurnNotificationBackgroundService>();
 
         return services;
     }

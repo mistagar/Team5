@@ -25,7 +25,7 @@ namespace Team5Hackathon.Infrastructure.Repositories
 
         public async Task<IEnumerable<Call>> GetCallsByClientIdAsync(Guid clientId)
         {
-            return await _context.Calls.Where(c => c.UserId == clientId).ToListAsync();
+            return await _context.Calls.Where(c => c.UserId == clientId).OrderByDescending(c => c.StartTime).ToListAsync();
         }
 
         public async Task<Call> CreateCallAsync(Call call)
